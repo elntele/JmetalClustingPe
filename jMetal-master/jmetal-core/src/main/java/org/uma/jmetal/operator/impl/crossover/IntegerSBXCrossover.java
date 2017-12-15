@@ -80,20 +80,29 @@ public class IntegerSBXCrossover implements CrossoverOperator<IntegerSolution> {
     List<IntegerSolution> offspring = new ArrayList<IntegerSolution>(2);
     offspring.add((IntegerSolution) parent1.copy()) ;
     offspring.add((IntegerSolution) parent2.copy()) ;
-    Pattern [] LineColumn1=parent1.getLineColumn();
-    Pattern [] LineColumn2=parent2.getLineColumn();
-
+    Pattern [] LineColumn1=parent1.getLineColumn().clone();
+    Pattern [] LineColumn2=parent2.getLineColumn().clone();
+    
+    int Psize=LineColumn1.length;
     int i;
     double rand;
     double y1, y2, yL, yu;
     double c1, c2;
     double alpha, beta, betaq;
     int valueX1, valueX2;
+    Pattern city1 = LineColumn1[0];
+    Pattern city2 = LineColumn2[0];
 
     if (randomGenerator.getRandomValue() <= probability) {
       for (i = 0; i < parent1.getNumberOfVariables(); i++) {
         valueX1 = parent1.getVariableValue(i);
         valueX2 = parent2.getVariableValue(i);
+        //eu
+        if (i<Psize){
+        	city1=LineColumn1[i];
+        	city2=LineColumn2[i];
+
+        }
         if (randomGenerator.getRandomValue() <= 0.5) {
           if (Math.abs(valueX1 - valueX2) > EPS) {
 
@@ -157,15 +166,23 @@ public class IntegerSBXCrossover implements CrossoverOperator<IntegerSolution> {
           } else {
             offspring.get(0).setVariableValue(i, valueX1);
             offspring.get(1).setVariableValue(i, valueX2);
+            if(i<Psize){
+            	LineColumn1[i]=city1;
+            	LineColumn2[i]=city2;
+            }
           }
         } else {
           offspring.get(0).setVariableValue(i, valueX2);
           offspring.get(1).setVariableValue(i, valueX1);
+          if(i<Psize){
+          	LineColumn1[i]=city2;
+          	LineColumn2[i]=city1;
+          }
         }
       }
     }
-    offspring.get(0).setLineColumn(LineColumn1);
-    offspring.get(1).setLineColumn(LineColumn2);
+    offspring.get(0).setLineColumn(LineColumn1.clone());
+    offspring.get(1).setLineColumn(LineColumn2.clone());
 
     return offspring;
   }

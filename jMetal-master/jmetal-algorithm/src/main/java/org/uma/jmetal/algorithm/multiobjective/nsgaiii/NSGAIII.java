@@ -37,7 +37,6 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	protected List<ReferencePoint<S>> referencePoints = new Vector<>();
 	protected GmlData gml;
 	protected List<Pattern>[] clustters;
-	
 
 	/** Constructor */
 	public NSGAIII(NSGAIIIBuilder<S> builder) { // can be created from the
@@ -80,7 +79,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	@Override
 	protected void updateProgress() {
 		iterations++;
-		System.out.println("numero de iteraçõs"+iterations);
+		System.out.println("numero de iteraçõs" + iterations);
 	}
 
 	@Override
@@ -99,7 +98,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	 * método pra modificar a matriz inteira mudando cada elemento dela por um
 	 * dos 3 patterns mais proximos de forma aleatória
 	 */
-	public Pattern[] createNewMatrix(Pattern[] lineColumn) {
+	public Pattern[] createNewMatrix(Pattern[] lineColumn) {// lineColumn é uma copia
 		Pattern[] copyLineColumn = new Pattern[lineColumn.length];
 		Random gerator = new Random();
 
@@ -111,18 +110,18 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 
 	/**
 	 * metodo muda toda a matriz de cidades
+	 * 
 	 * @param solution
 	 * @return
 	 */
-	
-	public IntegerSolution changeMatrix(IntegerSolution solution) {
+
+	public IntegerSolution changeMatrix(IntegerSolution solution) {//solution é uma cópia
 		Random gerator = new Random();
 		// teste muda elemento da matriz
 		Pattern[] patterns = createNewMatrix(solution.getLineColumn().clone());
 		solution.setLineColumn(patterns.clone());
 		return solution;
 	}
-	
 
 	/**
 	 * compara duas soluções e retorna: -1 se s1 domina s2 0 se s1 e s2 são não
@@ -134,15 +133,15 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	public int coparation(IntegerSolution s1, IntegerSolution s2) {
 		DominanceComparator comparater = new DominanceComparator();
 		int i = comparater.compare(s1, s2);
-//		if (i == -1) {
-//			//System.out.println("s1 domina s2");
-//		}
-//		if (i == 0) {
-//			System.out.println("não há dominação");
-//		}
-//		if (i == 1) {
-//			System.out.println("s2 domina s1");
-//		}
+		// if (i == -1) {
+		// //System.out.println("s1 domina s2");
+		// }
+		// if (i == 0) {
+		// System.out.println("não há dominação");
+		// }
+		if (i == 1) {
+			System.out.println("s2 domina s1");
+		}
 		return i;
 	}
 
@@ -155,7 +154,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	 * @return
 	 */
 
-	public Pattern takeNodeMinDistance(Pattern node, List<Pattern> copyPatternList) {
+	public Pattern takeNodeMinDistance(Pattern node, List<Pattern> copyPatternList) {//copyPatternList é uma copia
 		double minDinstace = Double.MAX_VALUE;
 		Pattern patternNode = null;
 		for (Pattern P : copyPatternList) {
@@ -230,12 +229,14 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 
 	public List<S> localSearch(List<S> population) {
 		List<S> copySolution = new ArrayList<>(population.size());
-		int cont = 0;
-		int resultado;
 		for (Solution s1 : population) {
 			// chamada para a busca local
-//			IntegerSolution s2 = (changeMatrixElement((IntegerSolution)s1.copy()));// muda um elemento
-			IntegerSolution s2 = (changeMatrix((IntegerSolution) s1)); // muda matrix inteira
+			// IntegerSolution s2 =
+			// (changeMatrixElement((IntegerSolution)s1.copy()));// muda um
+			// elemento
+			IntegerSolution s2 = (changeMatrix((IntegerSolution) s1.copy())); // muda
+																				// matrix
+																				// inteira
 			this.problem.evaluate((S) s2);
 
 			switch (coparation((IntegerSolution) s1, s2)) {
@@ -256,15 +257,13 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 
 		}
 
-		cont += 1;
-
 		return copySolution;
 	}
 
 	@Override
 	protected List<S> selection(List<S> population) {
-		
-		population = localSearch(population);// eu
+
+		//population = localSearch(population);// eu
 		List<S> matingPopulation = new ArrayList<>(population.size());
 		for (int i = 0; i < getMaxPopulationSize(); i++) {
 			S solution = selectionOperator.execute(population);

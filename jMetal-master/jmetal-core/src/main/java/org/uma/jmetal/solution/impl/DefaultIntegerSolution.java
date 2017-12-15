@@ -54,7 +54,11 @@ public class DefaultIntegerSolution
 
   @Override
   public DefaultIntegerSolution copy() {
-    return new DefaultIntegerSolution(this);
+	  Pattern[] localLineCollunm=this.getLineColumn();
+	  DefaultIntegerSolution solution= new DefaultIntegerSolution(this);
+	  solution.setLineColumn(localLineCollunm);
+    return solution;
+	  //return new DefaultIntegerSolution(this);
   }
 
   @Override
