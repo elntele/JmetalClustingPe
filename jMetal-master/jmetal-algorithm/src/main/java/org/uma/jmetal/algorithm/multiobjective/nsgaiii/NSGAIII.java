@@ -14,10 +14,14 @@ import org.uma.jmetal.util.JMetalLogger;
 import org.uma.jmetal.util.SolutionListUtils;
 import org.uma.jmetal.util.comparator.DominanceComparator;
 import org.uma.jmetal.util.evaluator.SolutionListEvaluator;
+import org.uma.jmetal.util.fileoutput.SolutionListOutput;
+import org.uma.jmetal.util.fileoutput.impl.DefaultFileOutputContext;
+import org.uma.jmetal.util.pseudorandom.JMetalRandom;
 import org.uma.jmetal.util.solutionattribute.Ranking;
 import org.uma.jmetal.util.solutionattribute.impl.DominanceRanking;
 
 import br.cns.model.GmlData;
+import cbic15.Kmeans;
 import cbic15.Pattern;
 
 /**
@@ -37,6 +41,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	protected List<ReferencePoint<S>> referencePoints = new Vector<>();
 	protected GmlData gml;
 	protected List<Pattern>[] clustters;
+	private int LocalSeachFoundNoDominated=0;
 
 	/** Constructor */
 	public NSGAIII(NSGAIIIBuilder<S> builder) { // can be created from the
@@ -80,6 +85,9 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	protected void updateProgress() {
 		iterations++;
 		System.out.println("numero de iteraçõs" + iterations);
+		if (this.iterations%20==0){
+			printFinalSolutionSet(this.population);
+		}
 	}
 
 	@Override
@@ -141,6 +149,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 		// }
 		if (i == 1) {
 			System.out.println("s2 domina s1");
+			this.LocalSeachFoundNoDominated+=1;
 		}
 		return i;
 	}
@@ -197,7 +206,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	 * @return
 	 */
 
-	public Pattern[] changeOneIndexOfMatrix(int position, Pattern[] patterns) {
+	public Pattern[] changeOneIndexOfMatrix(int position, Pattern[] patterns) {//patterns é uma cópia
 		Random gerator = new Random();
 		patterns[position] = takeTreNodeMinDistance(this.clustters[position], patterns[position])
 				.get(gerator.nextInt(3));
@@ -211,12 +220,12 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	 * @return
 	 */
 
-	public IntegerSolution changeMatrixElement(IntegerSolution solution) {
+	public IntegerSolution changeMatrixElement(IntegerSolution solution) {// solution é uma cópia
 		Random gerator = new Random();
-		// teste muda elemento da matriz
+		// muda elemento da matriz
 		Pattern[] patterns = changeOneIndexOfMatrix(gerator.nextInt(solution.getLineColumn().length),
-				solution.getLineColumn());
-		solution.setLineColumn(patterns.clone());
+				solution.getLineColumn().clone());
+		solution.setLineColumn(patterns);
 		return solution;
 	}
 
@@ -231,10 +240,9 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 		List<S> copySolution = new ArrayList<>(population.size());
 		for (Solution s1 : population) {
 			// chamada para a busca local
-			// IntegerSolution s2 =
-			// (changeMatrixElement((IntegerSolution)s1.copy()));// muda um
+			 IntegerSolution s2 =(changeMatrixElement((IntegerSolution)s1.copy()));// muda um
 			// elemento
-			IntegerSolution s2 = (changeMatrix((IntegerSolution) s1.copy())); // muda
+			//IntegerSolution s2 = (changeMatrix((IntegerSolution) s1.copy())); // muda
 																				// matrix
 																				// inteira
 			this.problem.evaluate((S) s2);
@@ -263,7 +271,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	@Override
 	protected List<S> selection(List<S> population) {
 
-		//population = localSearch(population);// eu
+		population = localSearch(population);// eu
 		List<S> matingPopulation = new ArrayList<>(population.size());
 		for (int i = 0; i < getMaxPopulationSize(); i++) {
 			S solution = selectionOperator.execute(population);
@@ -380,5 +388,22 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	public String getDescription() {
 		return "Nondominated Sorting Genetic Algorithm version III";
 	}
+
+	public int getLocalSeachFoundNoDominated() {
+		return LocalSeachFoundNoDominated;
+	}
+	
+	public void printFinalSolutionSet(List<? extends Solution<?>> population) {
+
+		new SolutionListOutput(population).setSeparator("\t")
+				.setVarFileOutputContext(new DefaultFileOutputContext("VAR"+this.iterations+".tsv"))
+				.setFunFileOutputContext(new DefaultFileOutputContext("FUN"+this.iterations+".tsv")).print();
+		
+		JMetalLogger.logger.info("Random seed: " + JMetalRandom.getInstance().getSeed());
+		JMetalLogger.logger.info("Objectives values have been written to file FUN.tsv");
+		JMetalLogger.logger.info("Variables values have been written to file VAR.tsv");
+	}
+
+	
 
 }

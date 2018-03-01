@@ -54,7 +54,16 @@ public class WFGHypervolume<S extends Solution<?>> extends Hypervolume<S> {
   public WFGHypervolume(Front referenceParetoFront) {
     super(referenceParetoFront) ;
     numberOfObjectives = referenceParetoFront.getPointDimensions() ;
-    referencePoint = null ;
+    //danilo
+    Point point = new ArrayPoint(4);
+    point.setDimensionValue(0, 0);
+	point.setDimensionValue(1, 0);
+	point.setDimensionValue(2, 0);
+	point.setDimensionValue(3, 0);
+	referencePoint = point ;
+	//########################
+	
+    //referencePoint = null ;
     updateReferencePoint(referenceParetoFront);
   }
 
