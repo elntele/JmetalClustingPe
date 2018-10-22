@@ -111,7 +111,8 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 		Random gerator = new Random();
 
 		for (int i = 0; i < lineColumn.length; i++) {
-			copyLineColumn[i] = takeTreNodeMinDistance(this.clustters[i], lineColumn[i]).get(gerator.nextInt(3));
+			// hou uma falha nesta linha abaixo que foi comentada pq não houve inclussão do parametro numberNeighbors que passou a ser neceário apos deixa o tamanho da busca dinâmico 
+			//copyLineColumn[i] = takeTreNodeMinDistance(this.clustters[i], lineColumn[i]).get(gerator.nextInt(3));
 		}
 		return copyLineColumn;
 	}
@@ -186,15 +187,24 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	 * @return
 	 */
 
-	public List<Pattern> takeTreNodeMinDistance(List<Pattern> patternList, Pattern pattern) {
+	public List<Pattern> takeNnumberNodeMinDistance(List<Pattern> patternList, Pattern pattern, int numberNeighbors) {
 		List<Pattern> Litlepattern = new ArrayList<>();
 		List<Pattern> copyPatternList = new ArrayList<>();
+		int maxNumberNeighbors = patternList.size()-1;
 		copyPatternList.addAll(patternList);
-		Litlepattern.add(takeNodeMinDistance(pattern, copyPatternList));
-		copyPatternList.remove(Litlepattern.get(0));
-		Litlepattern.add(takeNodeMinDistance(pattern, copyPatternList));
-		copyPatternList.remove(Litlepattern.get(1));
-		Litlepattern.add(takeNodeMinDistance(pattern, copyPatternList));
+		if (numberNeighbors>maxNumberNeighbors-1){ //garante que o numero de cidades da busca não exceda o numero de
+			numberNeighbors=maxNumberNeighbors-1;// o numero mácimo de cidades
+		}
+		for (int i=0;i<numberNeighbors;i++){
+			Litlepattern.add(takeNodeMinDistance(pattern, copyPatternList));
+			copyPatternList.remove(Litlepattern.get(i));
+		}
+		
+//		Litlepattern.add(takeNodeMinDistance(pattern, copyPatternList));
+//		copyPatternList.remove(Litlepattern.get(1));
+//		Litlepattern.add(takeNodeMinDistance(pattern, copyPatternList));
+		System.out.println("tamanho da lista: " + Litlepattern.size() );
+		
 		return Litlepattern;
 	}
 
@@ -206,10 +216,11 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	 * @return
 	 */
 
-	public Pattern[] changeOneIndexOfMatrix(int position, Pattern[] patterns) {//patterns é uma cópia
+	public Pattern[] changeOneIndexOfMatrix(int position, Pattern[] patterns, int numberNeighbors) {//patterns é uma cópia
 		Random gerator = new Random();
-		patterns[position] = takeTreNodeMinDistance(this.clustters[position], patterns[position])
-				.get(gerator.nextInt(3));
+		List<Pattern> Litlepattern = new ArrayList<>();
+		Litlepattern=takeNnumberNodeMinDistance(this.clustters[position], patterns[position],numberNeighbors);
+		patterns[position] = Litlepattern.get(gerator.nextInt(Litlepattern.size()));
 		return patterns;
 	}
 
@@ -220,11 +231,11 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	 * @return
 	 */
 
-	public IntegerSolution changeMatrixElement(IntegerSolution solution) {// solution é uma cópia
+	public IntegerSolution changeMatrixElement(IntegerSolution solution, int numberNeighbors) {// solution é uma cópia
 		Random gerator = new Random();
 		// muda elemento da matriz
 		Pattern[] patterns = changeOneIndexOfMatrix(gerator.nextInt(solution.getLineColumn().length),
-				solution.getLineColumn().clone());
+				solution.getLineColumn().clone(), numberNeighbors);
 		solution.setLineColumn(patterns);
 		return solution;
 	}
@@ -236,11 +247,11 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	 * @return population alterada ou não
 	 */
 
-	public List<S> localSearch(List<S> population) {
+	public List<S> localSearch(List<S> population, int numberNeighbors) {
 		List<S> copySolution = new ArrayList<>(population.size());
 		for (Solution s1 : population) {
 			// chamada para a busca local
-			 IntegerSolution s2 =(changeMatrixElement((IntegerSolution)s1.copy()));// muda um
+			 IntegerSolution s2 =(changeMatrixElement((IntegerSolution)s1.copy(), numberNeighbors));// muda um
 			// elemento
 			//IntegerSolution s2 = (changeMatrix((IntegerSolution) s1.copy())); // muda
 																				// matrix
@@ -270,8 +281,8 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 
 	@Override
 	protected List<S> selection(List<S> population) {
-
-		population = localSearch(population);// eu
+		int numberNeighbors =5;// mudar numero de vizinhos da busca aqui
+		population = localSearch(population,numberNeighbors);// eu
 		List<S> matingPopulation = new ArrayList<>(population.size());
 		for (int i = 0; i < getMaxPopulationSize(); i++) {
 			S solution = selectionOperator.execute(population);
