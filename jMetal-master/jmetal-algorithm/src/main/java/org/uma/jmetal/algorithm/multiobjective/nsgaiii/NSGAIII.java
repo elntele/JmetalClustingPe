@@ -203,9 +203,9 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 		if (numberNeighbors > maxNumberNeighbors - 1) { // garante que o numero
 														// de cidades da busca
 														// não exceda o numero
-														// de
-			numberNeighbors = maxNumberNeighbors - 1;// o numero mácimo de
-														// cidades
+														// de cidades do cluster
+			numberNeighbors = maxNumberNeighbors - 1;
+														
 		}
 		for (int i = 0; i < numberNeighbors; i++) {
 			Litlepattern.add(takeNodeMinDistance(pattern, copyPatternList));
@@ -336,6 +336,8 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 			// iteração na lista de vizinhos mais próximos
 //			int x=0;
 			boolean stop=false;
+			S sDominator =  (S) s1.copy();
+			
 			for (Pattern p : Litlepattern) {
 				Pattern[] tempPattern = s1.getLineColumn().clone();
 				tempPattern[clusterNumber] = p;
@@ -346,36 +348,90 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 
 				switch (coparation((IntegerSolution) s1, s2)) {
 				case -1:
-					copySolution.add((S) s1);
 //					System.out.println("entrei em -1e este é x "+x);
 					break;
 				case 0:
-					copySolution.add((S) s1);
 //					System.out.println("entrei em 0 este é x "+x);
 					break;
 				case 1:
-					copySolution.add((S) s2);
+					sDominator=(S)s2.copy();
 //					System.out.println("entrei em 1 e este é x "+x);
 					stop=true;
 					break;
 				default:
-					copySolution.add((S) s1);
 					System.out.println("deu falha no compara");
 					break;
 				}
-				if(stop) break;
+				if(stop) {
+					break;
+				} 	
 //				x+=1;
 			}
+			copySolution.add((S)sDominator);
 		}
 
 		return copySolution;
 	}
+	
+	/**
+	 * nova abordagem fazer varredura nos vizinhos em busca de um dominante e do dominante do dominante
+	 */
+	
+	public List<S> localSearchTestingAllAndDontStopUntilArriveInFInalevenFindAFirstDominator(List<S> population, int numberNeighbors) {
+		List<S> copySolution = new ArrayList<>(population.size());
+
+		for (Solution s1 : population) {
+			Solution copyInterge = s1.copy();
+			Random gerator = new Random();
+			int clusterNumber = gerator.nextInt(s1.copy().getLineColumn().length);
+			
+			// retorna uma lista (Litlepattern) com os "numberNeighbors" vizinhos mais próximos
+			List<Pattern> Litlepattern = changeOneIndexOfMatrixTestingAll((clusterNumber),
+					s1.copy().getLineColumn().clone(), numberNeighbors);
+
+			// iteração na lista de vizinhos mais próximos
+			int x=0;
+			S sDominator =  (S) s1.copy();
+			
+			for (Pattern p : Litlepattern) {
+				Pattern[] tempPattern = s1.getLineColumn().clone();
+				tempPattern[clusterNumber] = p;
+				copyInterge.setLineColumn(tempPattern);
+				IntegerSolution s2 = (IntegerSolution) copyInterge;
+
+				this.problem.evaluate((S) s2);
+
+				switch (coparation((IntegerSolution) s1, s2)) {
+				case -1:
+					System.out.println("entrei em -1e este é x "+x);
+					break;
+				case 0:
+					System.out.println("entrei em 0 este é x "+x);
+					break;
+				case 1:
+					sDominator=(S)s2.copy();// a nova soção assumi o lugar de dominador
+					s1=(S)s2.copy();// a nova soção assumi o lugar de S1 para ser comparada com outros vizinhos na busca
+					System.out.println("entrei em 1 e este é x "+x);
+					break;
+				default:
+					System.out.println("deu falha no compara");
+					break;
+				}
+		
+				x+=1;
+			}
+			copySolution.add((S)sDominator);
+		}
+
+		return copySolution;
+		}
 
 	@Override
 	protected List<S> selection(List<S> population) {
-		int numberNeighbors = 5;// mudar numero de vizinhos da busca aqui
-		//population = localSearch(population, numberNeighbors);// eu
-		population = localSearchTestingAll(population, numberNeighbors);// este testar percorrendo os vizinhos
+		int numberNeighbors = 8;// mudar numero de vizinhos da busca aqui
+		population = localSearch(population, numberNeighbors);// eu
+//		population = localSearchTestingAll(population, numberNeighbors);// este testar percorrendo os vizinhos ate encontrar o primeiro dominador
+//		population =localSearchTestingAllAndDontStopUntilArriveInFInalevenFindAFirstDominator(population, numberNeighbors);//este testar percorrendo os vizinhos encontrando dominadores aaté esgotar os vizinhos
 		List<S> matingPopulation = new ArrayList<>(population.size());
 		for (int i = 0; i < getMaxPopulationSize(); i++) {
 			S solution = selectionOperator.execute(population);
