@@ -200,11 +200,11 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 		List<Pattern> copyPatternList = new ArrayList<>();
 		int maxNumberNeighbors = patternList.size() - 1;
 		copyPatternList.addAll(patternList);
-		if (numberNeighbors > maxNumberNeighbors - 1) { // garante que o numero
+		if (numberNeighbors > maxNumberNeighbors ) { // garante que o numero
 														// de cidades da busca
 														// não exceda o numero
 														// de cidades do cluster
-			numberNeighbors = maxNumberNeighbors - 1;
+			numberNeighbors = maxNumberNeighbors;
 														
 		}
 		for (int i = 0; i < numberNeighbors; i++) {
@@ -232,8 +232,11 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 																									// é
 																									// uma
 																									// cópia
+		// aqui é a hora de testar se a lis
 		Random gerator = new Random();
 		List<Pattern> Litlepattern = new ArrayList<>();
+		
+		
 		Litlepattern = takeNnumberNodeMinDistance(this.clustters[position], patterns[position], numberNeighbors);
 		patterns[position] = Litlepattern.get(gerator.nextInt(Litlepattern.size()));
 		return patterns;
@@ -268,8 +271,16 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 																								// uma
 																								// cópia
 		Random gerator = new Random();
+		// isso foi acrescido para que algum cluster de um elemento só não seja selecionado 
+		int position= gerator.nextInt(solution.getLineColumn().length);
+		System.out.println("esse é o sorteado "+this.clustters[position].size());
+		while (this.clustters[position].size()<2){
+			position= gerator.nextInt(solution.getLineColumn().length);
+			System.out.println("elementos no cluster "+this.clustters[position].size());
+		}
+		
 		// muda elemento da matriz
-		Pattern[] patterns = changeOneIndexOfMatrix(gerator.nextInt(solution.getLineColumn().length),
+		Pattern[] patterns = changeOneIndexOfMatrix(position,
 				solution.getLineColumn().clone(), numberNeighbors);
 		solution.setLineColumn(patterns);
 		return solution;
@@ -323,12 +334,19 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 
 	public List<S> localSearchTestingAll(List<S> population, int numberNeighbors) {
 		List<S> copySolution = new ArrayList<>(population.size());
-
+		// voltar aqui
 		for (Solution s1 : population) {
 			Solution copyInterge = s1.copy();
 			Random gerator = new Random();
 			int clusterNumber = gerator.nextInt(s1.copy().getLineColumn().length);
-			
+			//*****************************************************************
+			// esta parte foi add para evitar que cluster de um elemento só seja sorteado
+			System.out.println("esse é o sorteado "+this.clustters[clusterNumber].size());
+			while (this.clustters[clusterNumber].size()<2){
+				clusterNumber= gerator.nextInt(s1.getLineColumn().length);
+				System.out.println("elementos no cluster "+this.clustters[clusterNumber].size());
+			}
+			//******************************************************************
 			// retorna uma lista (Litlepattern) com os "numberNeighbors" vizinhos mais próximos
 			List<Pattern> Litlepattern = changeOneIndexOfMatrixTestingAll((clusterNumber),
 					s1.copy().getLineColumn().clone(), numberNeighbors);
@@ -384,6 +402,15 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 			Solution copyInterge = s1.copy();
 			Random gerator = new Random();
 			int clusterNumber = gerator.nextInt(s1.copy().getLineColumn().length);
+			//*****************************************************************
+			// esta parte foi add para evitar que cluster de um elemento só seja sorteado
+			System.out.println("esse é o sorteado "+this.clustters[clusterNumber].size());
+			while (this.clustters[clusterNumber].size()<2){
+				clusterNumber= gerator.nextInt(s1.getLineColumn().length);
+				System.out.println("elementos no cluster "+this.clustters[clusterNumber].size());
+			}
+			//******************************************************************
+
 			
 			// retorna uma lista (Litlepattern) com os "numberNeighbors" vizinhos mais próximos
 			List<Pattern> Litlepattern = changeOneIndexOfMatrixTestingAll((clusterNumber),
@@ -429,9 +456,9 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	@Override
 	protected List<S> selection(List<S> population) {
 		int numberNeighbors = 8;// mudar numero de vizinhos da busca aqui
-		population = localSearch(population, numberNeighbors);// eu
+//		population = localSearch(population, numberNeighbors);// eu
 //		population = localSearchTestingAll(population, numberNeighbors);// este testar percorrendo os vizinhos ate encontrar o primeiro dominador
-//		population =localSearchTestingAllAndDontStopUntilArriveInFInalevenFindAFirstDominator(population, numberNeighbors);//este testar percorrendo os vizinhos encontrando dominadores aaté esgotar os vizinhos
+		population =localSearchTestingAllAndDontStopUntilArriveInFInalevenFindAFirstDominator(population, numberNeighbors);//este testar percorrendo os vizinhos encontrando dominadores aaté esgotar os vizinhos
 		List<S> matingPopulation = new ArrayList<>(population.size());
 		for (int i = 0; i < getMaxPopulationSize(); i++) {
 			S solution = selectionOperator.execute(population);
