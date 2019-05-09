@@ -2,6 +2,7 @@ package org.uma.jmetal.algorithm.multiobjective.nsgaiii;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 import java.util.Random;
 import java.util.Vector;
 
@@ -34,6 +35,8 @@ import cbic15.Pattern;
 public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, List<S>> {
 	protected int iterations;
 	protected int maxIterations;
+	// prop vem do arquivo scr/dados.properties
+	protected Properties prop;
 
 	protected SolutionListEvaluator<S> evaluator;
 
@@ -56,6 +59,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 		selectionOperator = builder.getSelectionOperator();
 
 		evaluator = builder.getEvaluator();
+		prop=builder.getProp();
 
 		/// NSGAIII
 		numberOfDivisions = new Vector<>(1);
@@ -85,7 +89,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	protected void updateProgress() {
 		iterations++;
 		System.out.println("numero de iteraçõs" + iterations);
-		if (this.iterations % 20 == 0) {
+		if (this.iterations % 2 == 0) {
 			printFinalSolutionSet(this.population);
 		}
 	}
@@ -458,7 +462,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 		int numberNeighbors = 8;// mudar numero de vizinhos da busca aqui
 //		population = localSearch(population, numberNeighbors);// eu
 //		population = localSearchTestingAll(population, numberNeighbors);// este testar percorrendo os vizinhos ate encontrar o primeiro dominador
-		population =localSearchTestingAllAndDontStopUntilArriveInFInalevenFindAFirstDominator(population, numberNeighbors);//este testar percorrendo os vizinhos encontrando dominadores aaté esgotar os vizinhos
+//		population =localSearchTestingAllAndDontStopUntilArriveInFInalevenFindAFirstDominator(population, numberNeighbors);//este testar percorrendo os vizinhos encontrando dominadores aaté esgotar os vizinhos
 		List<S> matingPopulation = new ArrayList<>(population.size());
 		for (int i = 0; i < getMaxPopulationSize(); i++) {
 			S solution = selectionOperator.execute(population);
@@ -581,12 +585,13 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	}
 
 	public void printFinalSolutionSet(List<? extends Solution<?>> population) {
-
+		String path=this.prop.getProperty("local")+this.prop.getProperty("algName")
+		+"/"+this.prop.getProperty("modo")+"/"+this.prop.getProperty("execucao"); 
 		new SolutionListOutput(population).setSeparator("\t")
-				.setVarFileOutputContext(new DefaultFileOutputContext("VAR" + this.iterations + ".tsv"))
-				.setFunFileOutputContext(new DefaultFileOutputContext("FUN" + this.iterations + ".tsv")).print();
+				.setVarFileOutputContext(new DefaultFileOutputContext(path+"/"+"VAR" + this.iterations + ".tsv"))
+				.setFunFileOutputContext(new DefaultFileOutputContext(path+"/"+"FUN" + this.iterations + ".tsv")).print();
 
-		JMetalLogger.logger.info("Random seed: " + JMetalRandom.getInstance().getSeed());
+		JMetalLogger.logger.info("Random Seed: " + JMetalRandom.getInstance().getSeed());
 		JMetalLogger.logger.info("Objectives values have been written to file FUN.tsv");
 		JMetalLogger.logger.info("Variables values have been written to file VAR.tsv");
 	}

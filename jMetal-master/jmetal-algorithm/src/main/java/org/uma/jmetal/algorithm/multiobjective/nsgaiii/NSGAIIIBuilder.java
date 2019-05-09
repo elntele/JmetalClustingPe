@@ -1,6 +1,7 @@
 package org.uma.jmetal.algorithm.multiobjective.nsgaiii;
 
 import java.util.List;
+import java.util.Properties;
 
 import org.uma.jmetal.operator.CrossoverOperator;
 import org.uma.jmetal.operator.MutationOperator;
@@ -25,18 +26,32 @@ public class NSGAIIIBuilder<S extends Solution<?>> implements AlgorithmBuilder<N
 	private SelectionOperator<List<S>, S> selectionOperator;
 	private GmlData gml;
 	private List<Pattern>[] clustters;
+	private Properties prop;
+	
 
 	private SolutionListEvaluator<S> evaluator;
 
 	/** Builder constructor */
-	public NSGAIIIBuilder(Problem<S> problem, GmlData gml, List<Pattern>[] clustters) {
+	public NSGAIIIBuilder(Problem<S> problem, GmlData gml, List<Pattern>[] clustters, Properties prop) {
 		this.problem = problem;
 		maxIterations = 250;
 		populationSize = 100;
 		evaluator = new SequentialSolutionListEvaluator<S>();
 		this.gml = gml;
 		this.clustters = clustters;
+		this.prop=prop;
 	}
+	
+	
+
+
+
+
+	public Properties getProp() {
+		return prop;
+	}
+
+
 
 	public List<Pattern>[] getClustters() {
 		return clustters;
