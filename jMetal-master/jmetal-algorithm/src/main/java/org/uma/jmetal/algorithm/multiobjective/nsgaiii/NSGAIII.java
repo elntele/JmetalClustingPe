@@ -1,5 +1,8 @@
 package org.uma.jmetal.algorithm.multiobjective.nsgaiii;
 
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -22,7 +25,6 @@ import org.uma.jmetal.util.solutionattribute.Ranking;
 import org.uma.jmetal.util.solutionattribute.impl.DominanceRanking;
 
 import br.cns.model.GmlData;
-import cbic15.Kmeans;
 import cbic15.Pattern;
 
 /**
@@ -98,11 +100,44 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	protected boolean isStoppingConditionReached() {
 		return iterations >= maxIterations;
 	}
+	
+	/**
+	 * método que alterei pra gerar um aqruivo .tsv com 456 redes aleatorias
+	 * resolvi deixar comentada
+	 */
+//	@Override
+//	protected List<S> evaluatePopulation(List<S> population) {
+//		population = evaluator.evaluate(population, getProblem());
+//		String path="C:\\Users\\elnte\\OneDrive\\Área de Trabalho\\fixedSolution.tsv";
+//		FileWriter arq;
+//		try {
+//			arq = new FileWriter(path);
+//			 PrintWriter gravarArq = new PrintWriter(arq);
+//			 int i=1;
+//			 for (Solution s:population) {
+//				 if (i==428) {
+//					 System.out.println("aqui");
+//				 }
+//				 String[] Str=s.toString().split("Objectives");
+//				 String[] Strf=Str[0].split(": ");
+//				 gravarArq.printf(Strf[1]+"\n");
+//				 i+=1;
+//			 }
+//			 arq.close();
+//			 
+//		} catch (IOException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+//	    
+//
+//		return population;
+//	}
+
 
 	@Override
 	protected List<S> evaluatePopulation(List<S> population) {
 		population = evaluator.evaluate(population, getProblem());
-
 		return population;
 	}
 
@@ -297,6 +332,8 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 
 	public List<S> localSearch(List<S> population, int numberNeighbors) {
 		List<S> copySolution = new ArrayList<>(population.size());
+		
+		//Jorge candeias
 		for (Solution s1 : population) {
 			// chamada para a busca local
 			IntegerSolution s2 = (changeMatrixElement((IntegerSolution) s1.copy(), numberNeighbors));// muda
@@ -453,10 +490,27 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 
 	@Override
 	protected List<S> selection(List<S> population) {
-		int numberNeighbors = 3;// mudar numero de vizinhos da busca aqui
-//		population = localSearch(population, numberNeighbors);// eu
-//		population = localSearchTestingAll(population, numberNeighbors);// este testar percorrendo os vizinhos ate encontrar o primeiro dominador
-//		population =localSearchTestingAllAndDontStopUntilArriveInFInalevenFindAFirstDominator(population, numberNeighbors);//este testar percorrendo os vizinhos encontrando dominadores aaté esgotar os vizinhos
+		
+		
+		if (this.prop.getProperty("modo").equals("com busca")) {
+			int numberNeighbors = Integer.parseInt(this.prop.getProperty("numberNeighbors"));// mudar numero de vizinhos da busca aqui
+			if (this.prop.getProperty("modo").equals("com busca")) {
+				if (this.prop.getProperty("buscalocal").equals("localSearch")) {
+					System.out.println("busca local = buscalocal");
+					population = localSearch(population, numberNeighbors);// eu
+				}else if(this.prop.getProperty("buscalocal").equals("localSearchTestingAll")) {
+					System.out.println("busca local = localSearchTestingAll");
+					population = localSearchTestingAll(population, numberNeighbors);// este testar percorrendo os vizinhos ate encontrar o primeiro dominador
+				}else {
+					System.out.println("busca local = localSearchTestingAllAndDontStopUntilArriveInFInalevenFindAFirstDominator");
+					population =localSearchTestingAllAndDontStopUntilArriveInFInalevenFindAFirstDominator(population, numberNeighbors);//este testar percorrendo os vizinhos encontrando dominadores aaté esgotar os vizinhos
+				}
+			}
+			
+		}
+//		
+//		
+//		
 		List<S> matingPopulation = new ArrayList<>(population.size());
 		for (int i = 0; i < getMaxPopulationSize(); i++) {
 			S solution = selectionOperator.execute(population);

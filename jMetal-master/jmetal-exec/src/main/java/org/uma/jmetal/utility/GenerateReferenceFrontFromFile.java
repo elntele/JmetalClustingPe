@@ -26,7 +26,7 @@ import java.util.Optional;
 import java.util.function.BinaryOperator;
 import java.util.stream.Stream;
 
-import javafx.scene.shape.Arc;
+//import javafx.scene.shape.Arc;
 
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toList;
