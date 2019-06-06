@@ -1,13 +1,15 @@
 package org.uma.jmetal.algorithm.multiobjective.nsgaiii;
 
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Properties;
 import java.util.Random;
 import java.util.Vector;
+import java.util.concurrent.TimeUnit;
 
 import org.uma.jmetal.algorithm.impl.AbstractGeneticAlgorithm;
 import org.uma.jmetal.algorithm.multiobjective.nsgaiii.util.EnvironmentalSelection;
@@ -61,7 +63,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 		selectionOperator = builder.getSelectionOperator();
 
 		evaluator = builder.getEvaluator();
-		prop=builder.getProp();
+		prop = builder.getProp();
 
 		/// NSGAIII
 		numberOfDivisions = new Vector<>(1);
@@ -100,10 +102,10 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	protected boolean isStoppingConditionReached() {
 		return iterations >= maxIterations;
 	}
-	
+
 	/**
-	 * método que alterei pra gerar um aqruivo .tsv com 456 redes aleatorias
-	 * resolvi deixar comentada
+	 * método que alterei pra gerar um aqruivo .tsv com 456 redes aleatorias resolvi
+	 * deixar comentada
 	 */
 //	@Override
 //	protected List<S> evaluatePopulation(List<S> population) {
@@ -133,17 +135,43 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 //
 //		return population;
 //	}
+	/**
+	 * função criada para o processamento dormir nos fds durante o dia quando o ar
+	 * condicionado estará desligado e estará mais quente.
+	 * @throws InterruptedException 
+	 */
+	public void dalay() throws InterruptedException {
+		Date now = new Date();
 
+		SimpleDateFormat simpleDateformat = new SimpleDateFormat("E"); // the day of the week abbreviated
+		String dia = simpleDateformat.format(now);
+		if (dia.equals("sáb") || dia.equals("dom")) {
+			Calendar agora = new GregorianCalendar();
+			int nowHour = agora.get(Calendar.HOUR);
+			if( nowHour  > 7) {
+				 System.out.println("são mais que 8 horas");
+				 TimeUnit.HOURS.sleep(11);
+			}
+			
+		}
+
+	}
 
 	@Override
 	protected List<S> evaluatePopulation(List<S> population) {
+		try {
+			dalay();// fução criada por jorge
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		population = evaluator.evaluate(population, getProblem());
 		return population;
 	}
 
 	/**
-	 * método pra modificar a matriz inteira mudando cada elemento dela por um
-	 * dos 3 patterns mais proximos de forma aleatória
+	 * método pra modificar a matriz inteira mudando cada elemento dela por um dos 3
+	 * patterns mais proximos de forma aleatória
 	 */
 	public Pattern[] createNewMatrix(Pattern[] lineColumn) {// lineColumn é uma
 															// copia
@@ -180,8 +208,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	 * compara duas soluções e retorna: -1 se s1 domina s2 0 se s1 e s2 são não
 	 * dominadas 1 se s2 domina s1
 	 * 
-	 * @param solutio1
-	 *            e solution2
+	 * @param solutio1 e solution2
 	 */
 	public int coparation(IntegerSolution s1, IntegerSolution s2) {
 		DominanceComparator comparater = new DominanceComparator();
@@ -200,8 +227,8 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	}
 
 	/**
-	 * metodo recebe um nó e uma lista de nós e retorna o nó da lista mais
-	 * próximo ao nó parametro
+	 * metodo recebe um nó e uma lista de nós e retorna o nó da lista mais próximo
+	 * ao nó parametro
 	 * 
 	 * @param node
 	 * @param copyPatternList
@@ -239,12 +266,12 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 		List<Pattern> copyPatternList = new ArrayList<>();
 		int maxNumberNeighbors = patternList.size() - 1;
 		copyPatternList.addAll(patternList);
-		if (numberNeighbors > maxNumberNeighbors ) { // garante que o numero
-														// de cidades da busca
-														// não exceda o numero
-														// de cidades do cluster
+		if (numberNeighbors > maxNumberNeighbors) { // garante que o numero
+													// de cidades da busca
+													// não exceda o numero
+													// de cidades do cluster
 			numberNeighbors = maxNumberNeighbors;
-														
+
 		}
 		for (int i = 0; i < numberNeighbors; i++) {
 			Litlepattern.add(takeNodeMinDistance(pattern, copyPatternList));
@@ -260,7 +287,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	}
 
 	/**
-	 * Muda um elemento do array matriz 
+	 * Muda um elemento do array matriz
 	 * 
 	 * @param position
 	 * @param patterns
@@ -274,17 +301,15 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 		// aqui é a hora de testar se a lis
 		Random gerator = new Random();
 		List<Pattern> Litlepattern = new ArrayList<>();
-		
-		
+
 		Litlepattern = takeNnumberNodeMinDistance(this.clustters[position], patterns[position], numberNeighbors);
 		patterns[position] = Litlepattern.get(gerator.nextInt(Litlepattern.size()));
 		return patterns;
 	}
 
 	/**
-	 * novo modelo para testar todos os vizinhos em busca de uma solução que
-	 * domine. este não retorna mais um array de pattern e sim uma pequena lista
-	 * de pattern
+	 * novo modelo para testar todos os vizinhos em busca de uma solução que domine.
+	 * este não retorna mais um array de pattern e sim uma pequena lista de pattern
 	 */
 	public List<Pattern> changeOneIndexOfMatrixTestingAll(int position, Pattern[] patterns, int numberNeighbors) {// patterns
 																													// é
@@ -310,17 +335,116 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 																								// uma
 																								// cópia
 		Random gerator = new Random();
-		// isso foi acrescido para que algum cluster de um elemento só não seja selecionado 
-		int position= gerator.nextInt(solution.getLineColumn().length);
-		while (this.clustters[position].size()<2){
-			position= gerator.nextInt(solution.getLineColumn().length);
+		// isso foi acrescido para que algum cluster de um elemento só não seja
+		// selecionado
+		int position = gerator.nextInt(solution.getLineColumn().length);
+		while (this.clustters[position].size() < 2) {
+			position = gerator.nextInt(solution.getLineColumn().length);
 		}
-		
+
 		// muda elemento da matriz
-		Pattern[] patterns = changeOneIndexOfMatrix(position,
-				solution.getLineColumn().clone(), numberNeighbors);
+		Pattern[] patterns = changeOneIndexOfMatrix(position, solution.getLineColumn().clone(), numberNeighbors);
 		solution.setLineColumn(patterns);
 		return solution;
+	}
+
+	/**
+	 * metodo recebe a população e uma lista com n-numerofobjetives com o maior
+	 * valor de doubler e retorna um array com o indice das 4 soluções da população
+	 * com menores valores de objetivo
+	 * 
+	 * @param arrayObjetiveValueLower
+	 * @param population
+	 * @return
+	 */
+
+	public Integer[] takeNLowerSolutiox(Double[] arrayObjetiveValueLower, List<S> population) {
+		Integer[] arrayIndice = new Integer[this.problem.getNumberOfObjectives()];
+		for (int i = 0; i < population.size(); i++) {
+			if (Double.parseDouble(population.get(i).getVariableValueString(0)) < arrayObjetiveValueLower[0]) {
+				arrayObjetiveValueLower[0] = Double.parseDouble(population.get(i).getVariableValueString(0));
+				arrayIndice[0] = i;
+			}
+		}
+
+		for (int i = 0; i < population.size(); i++) {
+			if ((Double.parseDouble(population.get(i).getVariableValueString(1)) < arrayObjetiveValueLower[1])
+					&& (arrayIndice[0] != i)) {
+				arrayObjetiveValueLower[1] = Double.parseDouble(population.get(i).getVariableValueString(1));
+				arrayIndice[1] = i;
+			}
+		}
+
+		for (int i = 0; i < population.size(); i++) {
+			if ((Double.parseDouble(population.get(i).getVariableValueString(2)) < arrayObjetiveValueLower[2])
+					&& (arrayIndice[0] != i) && (arrayIndice[1] != i)) {
+				arrayObjetiveValueLower[2] = Double.parseDouble(population.get(i).getVariableValueString(2));
+				arrayIndice[2] = i;
+			}
+		}
+
+		for (int i = 0; i < population.size(); i++) {
+			if ((Double.parseDouble(population.get(i).getVariableValueString(3)) < arrayObjetiveValueLower[3]
+					&& (arrayIndice[0] != i) && (arrayIndice[1] != i) && (arrayIndice[2] != i))) {
+				arrayObjetiveValueLower[3] = Double.parseDouble(population.get(i).getVariableValueString(3));
+				arrayIndice[3] = i;
+			}
+		}
+
+		return arrayIndice;
+	}
+
+	/**
+	 * metodo recebe a população e uma lista com n-numerofobjetives com o menor
+	 * valor de doubler e um arrey contendo os indices das suluções com menores
+	 * valores na população, a inteção de receber esse array é so pra não repetir os
+	 * indices que já foram escolhidos como os indices das soluções com menores
+	 * valor retorna um array com os indice das 4 soluções da população com maiores
+	 * valores de objetivo
+	 * 
+	 * @param arrayObjetiveValueLower
+	 * @param population
+	 * @return
+	 */
+	public Integer[] takeNUpperSolutiox(Double[] arrayObjetiveValueUpper, List<S> population, Integer[] Lowers) {
+		Integer[] arrayIndiceUpper = new Integer[this.problem.getNumberOfObjectives()];
+		for (int i = 0; i < population.size(); i++) {
+			if (Double.parseDouble(population.get(i).getVariableValueString(0)) > arrayObjetiveValueUpper[0]
+					&& (i != Lowers[0] && (i != Lowers[1]) && (i != Lowers[2]) && (i != Lowers[3]))) {
+				arrayObjetiveValueUpper[0] = Double.parseDouble(population.get(i).getVariableValueString(0));
+				arrayIndiceUpper[0] = i;
+			}
+		}
+
+		for (int i = 0; i < population.size(); i++) {
+			if ((Double.parseDouble(population.get(i).getVariableValueString(1)) > arrayObjetiveValueUpper[1])
+					&& (i != Lowers[0] && (i != Lowers[1]) && (i != Lowers[2]) && (i != Lowers[3])
+							&& (arrayIndiceUpper[0] != i))) {
+				arrayObjetiveValueUpper[1] = Double.parseDouble(population.get(i).getVariableValueString(1));
+				arrayIndiceUpper[1] = i;
+			}
+		}
+
+		for (int i = 0; i < population.size(); i++) {
+			if ((Double.parseDouble(population.get(i).getVariableValueString(2)) > arrayObjetiveValueUpper[2])
+					&& (i != Lowers[0] && (i != Lowers[1]) && (i != Lowers[2]) && (i != Lowers[3])
+							&& (arrayIndiceUpper[0] != i) && (arrayIndiceUpper[1] != i))) {
+				arrayObjetiveValueUpper[2] = Double.parseDouble(population.get(i).getVariableValueString(2));
+				arrayIndiceUpper[2] = i;
+			}
+		}
+
+		for (int i = 0; i < population.size(); i++) {
+			if ((Double.parseDouble(population.get(i).getVariableValueString(3)) > arrayObjetiveValueUpper[3]
+					&& (i != Lowers[0] && (i != Lowers[1]) && (i != Lowers[2]) && (i != Lowers[3])
+							&& (arrayIndiceUpper[0] != i) && (arrayIndiceUpper[1] != i)
+							&& (arrayIndiceUpper[2] != i)))) {
+				arrayObjetiveValueUpper[3] = Double.parseDouble(population.get(i).getVariableValueString(3));
+				arrayIndiceUpper[3] = i;
+			}
+		}
+
+		return arrayIndiceUpper;
 	}
 
 	/**
@@ -332,35 +456,112 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 
 	public List<S> localSearch(List<S> population, int numberNeighbors) {
 		List<S> copySolution = new ArrayList<>(population.size());
-		
-		//Jorge candeias
-		for (Solution s1 : population) {
-			// chamada para a busca local
-			IntegerSolution s2 = (changeMatrixElement((IntegerSolution) s1.copy(), numberNeighbors));// muda
-																										// um
-			// elemento
-			// IntegerSolution s2 = (changeMatrix((IntegerSolution) s1.copy()));
-			// // muda
-			// matrix
-			// inteira
-			this.problem.evaluate((S) s2);
+		if (prop.getProperty("eliteSearch").equals("y")) {
+			Double[] arrayObjetiveValueLower = new Double[this.problem.getNumberOfObjectives()];
+			Double[] arrayObjetiveValueUpper = new Double[this.problem.getNumberOfObjectives()];
 
-			switch (coparation((IntegerSolution) s1, s2)) {
-			case -1:
-				copySolution.add((S) s1);
-				break;
-			case 0:
-				copySolution.add((S) s1);
-				break;
-			case 1:
-				copySolution.add((S) s2);
-				break;
-			default:
-				copySolution.add((S) s1);
-				System.out.println("deu falha no compara");
-				break;
+			for (int i = 0; i < arrayObjetiveValueLower.length; i++) {
+				arrayObjetiveValueLower[i] = Double.MIN_VALUE;
+				arrayObjetiveValueUpper[i] = Double.MAX_VALUE;
 			}
 
+			Integer[] arrayIndiceLower = takeNLowerSolutiox(arrayObjetiveValueUpper.clone(), population);
+			Integer[] arrayIndiceUpper = takeNUpperSolutiox(arrayObjetiveValueLower.clone(), population,
+					arrayIndiceLower.clone());
+
+			/*
+			 * for (int i = 0; i < population.size(); i++) { if
+			 * (Double.parseDouble(population.get(i).getVariableValueString(0)) <
+			 * arrayObjetiveValueLower[0]) { arrayObjetiveValueLower[0] =
+			 * Double.parseDouble(population.get(i).getVariableValueString(0));
+			 * arrayIndice[0] = i; } }
+			 * 
+			 * for (int i = 0; i < population.size(); i++) { if
+			 * ((Double.parseDouble(population.get(i).getVariableValueString(1)) <
+			 * arrayObjetiveValueLower[1]) && (arrayIndice[0] != i)) {
+			 * arrayObjetiveValueLower[1] =
+			 * Double.parseDouble(population.get(i).getVariableValueString(1));
+			 * arrayIndice[1] = i; } }
+			 * 
+			 * for (int i = 0; i < population.size(); i++) { if
+			 * ((Double.parseDouble(population.get(i).getVariableValueString(2)) <
+			 * arrayObjetiveValueLower[2]) && (arrayIndice[0] != i) && (arrayIndice[1] !=
+			 * i)) { arrayObjetiveValueLower[2] =
+			 * Double.parseDouble(population.get(i).getVariableValueString(2));
+			 * arrayIndice[2] = i; } }
+			 * 
+			 * for (int i = 0; i < population.size(); i++) { if
+			 * ((Double.parseDouble(population.get(i).getVariableValueString(3)) <
+			 * arrayObjetiveValueLower[3] && (arrayIndice[0] != i) && (arrayIndice[1] != i)
+			 * && (arrayIndice[2] != i))) { arrayObjetiveValueLower[3] =
+			 * Double.parseDouble(population.get(i).getVariableValueString(3));
+			 * arrayIndice[3] = i; } }
+			 */
+
+			// Jorge candeias
+
+			for (int i = 0; i < population.size(); i++) {
+				// chamada para a busca local
+				if (i == arrayIndiceLower[0] || i == arrayIndiceLower[1] || i == arrayIndiceLower[2]
+						|| i == arrayIndiceLower[3] || i == arrayIndiceUpper[0] || i == arrayIndiceUpper[1]
+						|| i == arrayIndiceUpper[2] || i == arrayIndiceUpper[3]) {
+					System.out.println("Solução top indice " + i);
+					IntegerSolution s2 = (changeMatrixElement((IntegerSolution) population.get(i).copy(),
+							numberNeighbors));// muda
+					this.problem.evaluate((S) s2);
+
+					switch (coparation((IntegerSolution) population.get(i), s2)) {
+					case -1:
+						copySolution.add((S) population.get(i));
+						break;
+					case 0:
+						copySolution.add((S) population.get(i));
+						break;
+					case 1:
+						copySolution.add((S) s2);
+						break;
+					default:
+						copySolution.add((S) population.get(i));
+						System.out.println("deu falha no compara");
+						break;
+					}
+
+				} else {
+					copySolution.add((S) population.get(i));
+
+				}
+
+			}
+		} else {
+
+			for (Solution s1 : population) {
+				// chamada para a busca local
+				IntegerSolution s2 = (changeMatrixElement((IntegerSolution) s1.copy(), numberNeighbors));// muda
+																											// um
+				// elemento
+				// IntegerSolution s2 = (changeMatrix((IntegerSolution) s1.copy()));
+				// // muda
+				// matrix
+				// inteira
+				this.problem.evaluate((S) s2);
+
+				switch (coparation((IntegerSolution) s1, s2)) {
+				case -1:
+					copySolution.add((S) s1);
+					break;
+				case 0:
+					copySolution.add((S) s1);
+					break;
+				case 1:
+					copySolution.add((S) s2);
+					break;
+				default:
+					copySolution.add((S) s1);
+					System.out.println("deu falha no compara");
+					break;
+				}
+
+			}
 		}
 
 		return copySolution;
@@ -378,21 +579,22 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 			Solution copyInterge = s1.copy();
 			Random gerator = new Random();
 			int clusterNumber = gerator.nextInt(s1.copy().getLineColumn().length);
-			//*****************************************************************
+			// *****************************************************************
 			// esta parte foi add para evitar que cluster de um elemento só seja sorteado
-			while (this.clustters[clusterNumber].size()<2){
-				clusterNumber= gerator.nextInt(s1.getLineColumn().length);
+			while (this.clustters[clusterNumber].size() < 2) {
+				clusterNumber = gerator.nextInt(s1.getLineColumn().length);
 			}
-			//******************************************************************
-			// retorna uma lista (Litlepattern) com os "numberNeighbors" vizinhos mais próximos
+			// ******************************************************************
+			// retorna uma lista (Litlepattern) com os "numberNeighbors" vizinhos mais
+			// próximos
 			List<Pattern> Litlepattern = changeOneIndexOfMatrixTestingAll((clusterNumber),
 					s1.copy().getLineColumn().clone(), numberNeighbors);
 
 			// iteração na lista de vizinhos mais próximos
 //			int x=0;
-			boolean stop=false;
-			S sDominator =  (S) s1.copy();
-			
+			boolean stop = false;
+			S sDominator = (S) s1.copy();
+
 			for (Pattern p : Litlepattern) {
 				Pattern[] tempPattern = s1.getLineColumn().clone();
 				tempPattern[clusterNumber] = p;
@@ -409,52 +611,54 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 //					System.out.println("entrei em 0 este é x "+x);
 					break;
 				case 1:
-					sDominator=(S)s2.copy();
+					sDominator = (S) s2.copy();
 //					System.out.println("entrei em 1 e este é x "+x);
-					stop=true;
+					stop = true;
 					break;
 				default:
 					System.out.println("deu falha no compara");
 					break;
 				}
-				if(stop) {
+				if (stop) {
 					break;
-				} 	
+				}
 //				x+=1;
 			}
-			copySolution.add((S)sDominator);
+			copySolution.add((S) sDominator);
 		}
 
 		return copySolution;
 	}
-	
+
 	/**
-	 * nova abordagem fazer varredura nos vizinhos em busca de um dominante e do dominante do dominante
+	 * nova abordagem fazer varredura nos vizinhos em busca de um dominante e do
+	 * dominante do dominante
 	 */
-	
-	public List<S> localSearchTestingAllAndDontStopUntilArriveInFInalevenFindAFirstDominator(List<S> population, int numberNeighbors) {
+
+	public List<S> localSearchTestingAllAndDontStopUntilArriveInFInalevenFindAFirstDominator(List<S> population,
+			int numberNeighbors) {
 		List<S> copySolution = new ArrayList<>(population.size());
 
 		for (Solution s1 : population) {
 			Solution copyInterge = s1.copy();
 			Random gerator = new Random();
 			int clusterNumber = gerator.nextInt(s1.copy().getLineColumn().length);
-			//*****************************************************************
+			// *****************************************************************
 			// esta parte foi add para evitar que cluster de um elemento só seja sorteado
-			while (this.clustters[clusterNumber].size()<2){
-				clusterNumber= gerator.nextInt(s1.getLineColumn().length);
+			while (this.clustters[clusterNumber].size() < 2) {
+				clusterNumber = gerator.nextInt(s1.getLineColumn().length);
 			}
-			//******************************************************************
+			// ******************************************************************
 
-			
-			// retorna uma lista (Litlepattern) com os "numberNeighbors" vizinhos mais próximos
+			// retorna uma lista (Litlepattern) com os "numberNeighbors" vizinhos mais
+			// próximos
 			List<Pattern> Litlepattern = changeOneIndexOfMatrixTestingAll((clusterNumber),
 					s1.copy().getLineColumn().clone(), numberNeighbors);
 
 			// iteração na lista de vizinhos mais próximos
-			int x=0;
-			S sDominator =  (S) s1.copy();
-			
+			int x = 0;
+			S sDominator = (S) s1.copy();
+
 			for (Pattern p : Litlepattern) {
 				Pattern[] tempPattern = s1.getLineColumn().clone();
 				tempPattern[clusterNumber] = p;
@@ -465,48 +669,54 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 
 				switch (coparation((IntegerSolution) s1, s2)) {
 				case -1:
-					System.out.println("entrei em -1e este é x "+x);
+					System.out.println("entrei em -1e este é x " + x);
 					break;
 				case 0:
-					System.out.println("entrei em 0 este é x "+x);
+					System.out.println("entrei em 0 este é x " + x);
 					break;
 				case 1:
-					sDominator=(S)s2.copy();// a nova soção assumi o lugar de dominador
-					s1=(S)s2.copy();// a nova soção assumi o lugar de S1 para ser comparada com outros vizinhos na busca
-					System.out.println("entrei em 1 e este é x "+x);
+					sDominator = (S) s2.copy();// a nova soção assumi o lugar de dominador
+					s1 = (S) s2.copy();// a nova soção assumi o lugar de S1 para ser comparada com outros vizinhos na
+										// busca
+					System.out.println("entrei em 1 e este é x " + x);
 					break;
 				default:
 					System.out.println("deu falha no compara");
 					break;
 				}
-		
-				x+=1;
+
+				x += 1;
 			}
-			copySolution.add((S)sDominator);
+			copySolution.add((S) sDominator);
 		}
 
 		return copySolution;
-		}
+	}
 
 	@Override
 	protected List<S> selection(List<S> population) {
-		
-		
+
 		if (this.prop.getProperty("modo").equals("com busca")) {
-			int numberNeighbors = Integer.parseInt(this.prop.getProperty("numberNeighbors"));// mudar numero de vizinhos da busca aqui
+			int numberNeighbors = Integer.parseInt(this.prop.getProperty("numberNeighbors"));// mudar numero de vizinhos
+																								// da busca aqui
 			if (this.prop.getProperty("modo").equals("com busca")) {
 				if (this.prop.getProperty("buscalocal").equals("localSearch")) {
 					System.out.println("busca local = buscalocal");
 					population = localSearch(population, numberNeighbors);// eu
-				}else if(this.prop.getProperty("buscalocal").equals("localSearchTestingAll")) {
+				} else if (this.prop.getProperty("buscalocal").equals("localSearchTestingAll")) {
 					System.out.println("busca local = localSearchTestingAll");
-					population = localSearchTestingAll(population, numberNeighbors);// este testar percorrendo os vizinhos ate encontrar o primeiro dominador
-				}else {
-					System.out.println("busca local = localSearchTestingAllAndDontStopUntilArriveInFInalevenFindAFirstDominator");
-					population =localSearchTestingAllAndDontStopUntilArriveInFInalevenFindAFirstDominator(population, numberNeighbors);//este testar percorrendo os vizinhos encontrando dominadores aaté esgotar os vizinhos
+					population = localSearchTestingAll(population, numberNeighbors);// este testar percorrendo os
+																					// vizinhos ate encontrar o primeiro
+																					// dominador
+				} else {
+					System.out.println(
+							"busca local = localSearchTestingAllAndDontStopUntilArriveInFInalevenFindAFirstDominator");
+					population = localSearchTestingAllAndDontStopUntilArriveInFInalevenFindAFirstDominator(population,
+							numberNeighbors);// este testar percorrendo os vizinhos encontrando dominadores aaté esgotar
+												// os vizinhos
 				}
 			}
-			
+
 		}
 //		
 //		
@@ -633,11 +843,12 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	}
 
 	public void printFinalSolutionSet(List<? extends Solution<?>> population) {
-		String path=this.prop.getProperty("local")+this.prop.getProperty("algName")
-		+"/"+this.prop.getProperty("modo")+"/"+this.prop.getProperty("execucao"); 
+		String path = this.prop.getProperty("local") + this.prop.getProperty("algName") + "/"
+				+ this.prop.getProperty("modo") + "/" + this.prop.getProperty("execucao");
 		new SolutionListOutput(population).setSeparator("\t")
-				.setVarFileOutputContext(new DefaultFileOutputContext(path+"/"+"VAR" + this.iterations + ".tsv"))
-				.setFunFileOutputContext(new DefaultFileOutputContext(path+"/"+"FUN" + this.iterations + ".tsv")).print();
+				.setVarFileOutputContext(new DefaultFileOutputContext(path + "/" + "VAR" + this.iterations + ".tsv"))
+				.setFunFileOutputContext(new DefaultFileOutputContext(path + "/" + "FUN" + this.iterations + ".tsv"))
+				.print();
 
 		JMetalLogger.logger.info("Random Seed: " + JMetalRandom.getInstance().getSeed());
 		JMetalLogger.logger.info("Objectives values have been written to file FUN.tsv");
