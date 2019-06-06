@@ -159,12 +159,12 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 
 	@Override
 	protected List<S> evaluatePopulation(List<S> population) {
-		try {
+		/*try {
 			delay();// fução criada por jorge
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}
+		}*/
 		population = evaluator.evaluate(population, getProblem());
 		return population;
 	}
