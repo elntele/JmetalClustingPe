@@ -148,7 +148,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 		if (dia.equals("sáb") || dia.equals("dom")) {
 			Calendar agora = new GregorianCalendar();
 			int nowHour = agora.get(Calendar.HOUR);
-			if( nowHour  > 7) {
+			if( nowHour  == 8) {
 				 System.out.println("são mais que 8 horas");
 				 TimeUnit.HOURS.sleep(11);
 			}
