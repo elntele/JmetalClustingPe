@@ -140,7 +140,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	 * condicionado estará desligado e estará mais quente.
 	 * @throws InterruptedException 
 	 */
-	public void dalay() throws InterruptedException {
+	public void delay() throws InterruptedException {
 		Date now = new Date();
 
 		SimpleDateFormat simpleDateformat = new SimpleDateFormat("E"); // the day of the week abbreviated
@@ -160,7 +160,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	@Override
 	protected List<S> evaluatePopulation(List<S> population) {
 		try {
-			dalay();// fução criada por jorge
+			delay();// fução criada por jorge
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
