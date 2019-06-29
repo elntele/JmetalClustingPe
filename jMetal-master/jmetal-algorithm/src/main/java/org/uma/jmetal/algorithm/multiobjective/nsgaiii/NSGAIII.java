@@ -532,7 +532,55 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 				}
 
 			}
-		} else {
+		} else if   (prop.getProperty("eliteSearch").equals("n") && prop.getProperty("randomEliteSearch").equals("y")){
+			
+			Random gerator = new Random();
+
+			Integer[] arrayIndices = new Integer[this.problem.getNumberOfObjectives()*2];
+
+			for (int i = 0; i < arrayIndices.length; i++) {
+				arrayIndices[i] = gerator.nextInt(population.size());
+			}
+
+
+			for (int i = 0; i < population.size(); i++) {
+				// chamada para a busca local
+				if (i == arrayIndices[0] || i == arrayIndices[1] || i == arrayIndices[2]
+						|| i == arrayIndices[3] || i == arrayIndices[4] || i == arrayIndices[5]
+						|| i == arrayIndices[6] || i == arrayIndices[7]) {
+					System.out.println("Solução da escolha randomica indice " + i);
+					IntegerSolution s2 = (changeMatrixElement((IntegerSolution) population.get(i).copy(),
+							numberNeighbors));// muda
+					this.problem.evaluate((S) s2);
+
+					switch (coparation((IntegerSolution) population.get(i), s2)) {
+					case -1:
+						copySolution.add((S) population.get(i));
+						break;
+					case 0:
+						copySolution.add((S) population.get(i));
+						break;
+					case 1:
+						copySolution.add((S) s2);
+						break;
+					default:
+						copySolution.add((S) population.get(i));
+						System.out.println("deu falha no compara");
+						break;
+					}
+
+				} else {
+					copySolution.add((S) population.get(i));
+
+				}
+
+			}
+			
+			
+			
+			
+			
+		}else {
 
 			for (Solution s1 : population) {
 				// chamada para a busca local
