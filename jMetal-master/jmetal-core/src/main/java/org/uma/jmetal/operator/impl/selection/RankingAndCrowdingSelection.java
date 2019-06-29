@@ -79,7 +79,11 @@ public class RankingAndCrowdingSelection<S extends Solution<?>>
     front = ranking.getSubfront(rank);
 
     for (int i = 0 ; i < front.size(); i++) {
-      population.add(front.get(i));
+    	//alterado por jorge candeias para tratar apenas grafos conexos
+    	if (front.get(i).getObjective(3) < 1) {
+			population.add(front.get(i));
+		}
+      
     }
   }
 

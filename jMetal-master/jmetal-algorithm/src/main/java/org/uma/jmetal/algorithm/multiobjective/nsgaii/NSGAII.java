@@ -1,5 +1,8 @@
 package org.uma.jmetal.algorithm.multiobjective.nsgaii;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.uma.jmetal.algorithm.impl.AbstractGeneticAlgorithm;
 import org.uma.jmetal.operator.CrossoverOperator;
 import org.uma.jmetal.operator.MutationOperator;
@@ -9,9 +12,8 @@ import org.uma.jmetal.problem.Problem;
 import org.uma.jmetal.solution.Solution;
 import org.uma.jmetal.util.SolutionListUtils;
 import org.uma.jmetal.util.evaluator.SolutionListEvaluator;
-
-import java.util.ArrayList;
-import java.util.List;
+import org.uma.jmetal.util.fileoutput.SolutionListOutput;
+import org.uma.jmetal.util.fileoutput.impl.DefaultFileOutputContext;
 
 /**
  * @author Antonio J. Nebro <antonio@lcc.uma.es>
@@ -23,6 +25,7 @@ public class NSGAII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, L
   protected final SolutionListEvaluator<S> evaluator;
 
   protected int evaluations;
+  protected int falsoInteration=0;
 
   /**
    * Constructor
@@ -46,7 +49,13 @@ public class NSGAII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, L
   }
 
   @Override protected void updateProgress() {
-    evaluations += getMaxPopulationSize() ;
+	  evaluations += getMaxPopulationSize() ;
+//	  System.out.println("tamanho= "+ getMaxPopulationSize());
+	  if (evaluations%9120==0) {
+			this.falsoInteration+=20;
+		  printFinalSolutionSet(population);
+	    
+	    }
   }
 
   @Override protected boolean isStoppingConditionReached() {
@@ -58,13 +67,14 @@ public class NSGAII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, L
 
     return population;
   }
-
+// jorge aqui se minipula a questão da restrição
   @Override protected List<S> replacement(List<S> population, List<S> offspringPopulation) {
     List<S> jointPopulation = new ArrayList<>();
     jointPopulation.addAll(population);
     jointPopulation.addAll(offspringPopulation);
 
     RankingAndCrowdingSelection<S> rankingAndCrowdingSelection ;
+ // o if fica em outra classe nessa RankingAndCrowdingSelection
     rankingAndCrowdingSelection = new RankingAndCrowdingSelection<S>(getMaxPopulationSize()) ;
 
     return rankingAndCrowdingSelection.execute(jointPopulation) ;
@@ -85,4 +95,15 @@ public class NSGAII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, L
   @Override public String getDescription() {
     return "Nondominated Sorting Genetic Algorithm version II" ;
   }
+  
+  public void printFinalSolutionSet(List<? extends Solution<?>> population) {
+		
+		
+	    new SolutionListOutput(population)
+	            .setSeparator("\t")
+	            .setVarFileOutputContext(new DefaultFileOutputContext("VAR"+this.falsoInteration+".tsv"))
+	            .setFunFileOutputContext(new DefaultFileOutputContext("FUN"+this.falsoInteration+".tsv"))
+	            .print() ;
+
+}
 }
