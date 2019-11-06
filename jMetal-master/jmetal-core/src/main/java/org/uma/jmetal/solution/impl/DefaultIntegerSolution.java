@@ -1,8 +1,10 @@
 package org.uma.jmetal.solution.impl;
 
 import java.util.HashMap;
+import java.util.List;
 
 import org.uma.jmetal.problem.IntegerProblem;
+import org.uma.jmetal.problem.Problem;
 import org.uma.jmetal.solution.IntegerSolution;
 
 import cbic15.Pattern;
@@ -22,10 +24,21 @@ public class DefaultIntegerSolution
   /** Constructor */
   public DefaultIntegerSolution(IntegerProblem problem) {
     super(problem) ;
-
     initializeIntegerVariables();
     initializeObjectiveValues();
+   
   }
+  
+  /**
+	 * construtor vazio colocado apenas por causa do mapeamento do json Jackson
+	 * para a parte de paralelistmo, antes isso não existia no projeto, não use para outra coisa
+	 */
+
+  public DefaultIntegerSolution() {
+	   
+
+	  }
+  
 
   /** Copy constructor */
   public DefaultIntegerSolution(DefaultIntegerSolution solution) {
@@ -83,7 +96,18 @@ public Pattern[] getLineColumn() {
 public void setLineColumn(Pattern[] name) {
 	this.lineColumn=name;	
 }
-
+@Override
+public List getvariables() {
+	return variables;
+}
+@Override
+public double[] getObjectives() {
+	return objectives;
+}
+@Override
+public void setObjectives(double[] objectives) {
+	this.objectives = objectives;
+}
 
 
 }

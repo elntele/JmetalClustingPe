@@ -2,6 +2,7 @@ package org.uma.jmetal.algorithm.multiobjective.nsgaiii;
 
 import java.util.List;
 import java.util.Properties;
+import java.util.UUID;
 
 import org.uma.jmetal.operator.CrossoverOperator;
 import org.uma.jmetal.operator.MutationOperator;
@@ -10,6 +11,7 @@ import org.uma.jmetal.problem.Problem;
 import org.uma.jmetal.solution.Solution;
 import org.uma.jmetal.util.AlgorithmBuilder;
 import org.uma.jmetal.util.evaluator.SolutionListEvaluator;
+import org.uma.jmetal.util.evaluator.impl.ParallelSolutionListEvaluate;
 import org.uma.jmetal.util.evaluator.impl.SequentialSolutionListEvaluator;
 
 import br.cns.model.GmlData;
@@ -27,22 +29,62 @@ public class NSGAIIIBuilder<S extends Solution<?>> implements AlgorithmBuilder<N
 	private GmlData gml;
 	private List<Pattern>[] clustters;
 	private Properties prop;
-	
-
+	private List <UUID> ParallelEvaluateId;
 	private SolutionListEvaluator<S> evaluator;
+	private SolutionListEvaluator<S> parallelEvaluator;
 
+	
+	
 	/** Builder constructor */
-	public NSGAIIIBuilder(Problem<S> problem, GmlData gml, List<Pattern>[] clustters, Properties prop) {
+	public NSGAIIIBuilder(Problem<S> problem, GmlData gml, List<Pattern>[] clustters, Properties prop, List <UUID> ParallelEvaluateIdList) {
 		this.problem = problem;
 		maxIterations = 250;
 		populationSize = 100;
 		evaluator = new SequentialSolutionListEvaluator<S>();
+		parallelEvaluator = new ParallelSolutionListEvaluate<S>(ParallelEvaluateIdList);
 		this.gml = gml;
 		this.clustters = clustters;
 		this.prop=prop;
+		this.ParallelEvaluateId=ParallelEvaluateIdList;
 	}
 	
 	
+
+
+
+
+	public SolutionListEvaluator<S> getParallelEvaluator() {
+		return parallelEvaluator;
+	}
+
+
+
+
+
+
+	public void setParallelEvaluator(SolutionListEvaluator<S> parallelEvaluator) {
+		this.parallelEvaluator = parallelEvaluator;
+	}
+
+
+
+
+
+
+	public List<UUID> getParallelEvaluateId() {
+		return ParallelEvaluateId;
+	}
+
+
+
+
+
+
+	public void setParallelEvaluateId(List<UUID> parallelEvaluateId) {
+		ParallelEvaluateId = parallelEvaluateId;
+	}
+
+
 
 
 

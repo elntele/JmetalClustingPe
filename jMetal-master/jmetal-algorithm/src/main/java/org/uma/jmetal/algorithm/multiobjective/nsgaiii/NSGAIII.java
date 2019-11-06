@@ -1,5 +1,12 @@
 package org.uma.jmetal.algorithm.multiobjective.nsgaiii;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.EOFException;
+import java.io.IOException;
+import java.net.Socket;
+import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -8,6 +15,7 @@ import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Properties;
 import java.util.Random;
+import java.util.UUID;
 import java.util.Vector;
 import java.util.concurrent.TimeUnit;
 
@@ -16,6 +24,7 @@ import org.uma.jmetal.algorithm.multiobjective.nsgaiii.util.EnvironmentalSelecti
 import org.uma.jmetal.algorithm.multiobjective.nsgaiii.util.ReferencePoint;
 import org.uma.jmetal.solution.IntegerSolution;
 import org.uma.jmetal.solution.Solution;
+import org.uma.jmetal.solution.impl.DefaultIntegerSolution;
 import org.uma.jmetal.util.JMetalLogger;
 import org.uma.jmetal.util.SolutionListUtils;
 import org.uma.jmetal.util.comparator.DominanceComparator;
@@ -25,6 +34,11 @@ import org.uma.jmetal.util.fileoutput.impl.DefaultFileOutputContext;
 import org.uma.jmetal.util.pseudorandom.JMetalRandom;
 import org.uma.jmetal.util.solutionattribute.Ranking;
 import org.uma.jmetal.util.solutionattribute.impl.DominanceRanking;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import br.cns.model.GmlData;
 import cbic15.Pattern;
@@ -41,33 +55,37 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	protected int maxIterations;
 	// prop vem do arquivo scr/dados.properties
 	protected Properties prop;
+	protected int cont;
 
 	protected SolutionListEvaluator<S> evaluator;
-
+	protected SolutionListEvaluator<S> parallelEvaluator;
 	protected Vector<Integer> numberOfDivisions;
 	protected List<ReferencePoint<S>> referencePoints = new Vector<>();
 	protected GmlData gml;
 	protected List<Pattern>[] clustters;
 	private int LocalSeachFoundNoDominated = 0;
+	private UUID ParallelEvaluateId;
 
 	/** Constructor */
 	public NSGAIII(NSGAIIIBuilder<S> builder) { // can be created from the
 												// NSGAIIIBuilder within the
 												// same package
 		super(builder.getProblem());
+//		this.ParallelEvaluateId = builder.getParallelEvaluateId();
 		this.gml = builder.getGml();
 		this.clustters = builder.getClustters();
 		maxIterations = builder.getMaxIterations();
 		crossoverOperator = builder.getCrossoverOperator();
 		mutationOperator = builder.getMutationOperator();
 		selectionOperator = builder.getSelectionOperator();
-
+		parallelEvaluator = builder.getParallelEvaluator();
 		evaluator = builder.getEvaluator();
+
 		prop = builder.getProp();
 
 		/// NSGAIII
 		numberOfDivisions = new Vector<>(1);
-		numberOfDivisions.add(12); // Default value for 3D problems
+		numberOfDivisions.add(4); // Default value for 3D problems (is 12 never forget jorge)
 
 		(new ReferencePoint<S>()).generateReferencePoints(referencePoints, getProblem().getNumberOfObjectives(),
 				numberOfDivisions);
@@ -138,7 +156,8 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	/**
 	 * função criada para o processamento dormir nos fds durante o dia quando o ar
 	 * condicionado estará desligado e estará mais quente.
-	 * @throws InterruptedException 
+	 * 
+	 * @throws InterruptedException
 	 */
 	public void delay() throws InterruptedException {
 		Date now = new Date();
@@ -148,25 +167,126 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 		if (dia.equals("sáb") || dia.equals("dom")) {
 			Calendar agora = new GregorianCalendar();
 			int nowHour = agora.get(Calendar.HOUR);
-			if( nowHour  == 8) {
-				 System.out.println("são mais que 8 horas");
-				 TimeUnit.HOURS.sleep(11);
+			if (nowHour == 8) {
+				System.out.println("são mais que 8 horas");
+				TimeUnit.HOURS.sleep(11);
 			}
-			
+
 		}
 
 	}
 
 	@Override
 	protected List<S> evaluatePopulation(List<S> population) {
-		/*try {
-			delay();// fução criada por jorge
-		} catch (InterruptedException e) {
+		/*
+		 * try { delay();// fução criada por jorge } catch (InterruptedException e) { //
+		 * TODO Auto-generated catch block e.printStackTrace(); }
+		 */
+		if (this.prop.getProperty("parallelFitness").equals("y")) {
+			try {
+				return population = parallelEvaluator.evaluate(population, getProblem());
+			} catch (Exception e) {
+				// avalie local
+				return population = evaluator.evaluate(population, getProblem());
+			}
+		} else {
+			// avalie local
+			return population = evaluator.evaluate(population, getProblem());
+		}
+
+	}
+
+	protected List<S> evaluatePopulationparallel(List<S> population) {
+		Socket soc = null;
+		ObjectMapper mapper = new ObjectMapper();
+		String textOut = null;
+		try {
+			textOut = mapper.writeValueAsString(population);
+			List<String> l = new ArrayList<>();
+			l.add((this.ParallelEvaluateId).toString());
+			l.add(textOut);
+			textOut = mapper.writeValueAsString(l);
+
+		} catch (JsonProcessingException e1) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}*/
-		population = evaluator.evaluate(population, getProblem());
+			e1.printStackTrace();
+		}
+
+		String adress = "localhost";
+		try {
+			int serverPort = 7896;
+			soc = new Socket(adress, serverPort);
+			DataInputStream in = new DataInputStream(soc.getInputStream());
+			DataOutputStream out = new DataOutputStream(soc.getOutputStream());
+
+//			int length = out.readInt(); // read length of incoming message
+
+			byte[] b = textOut.getBytes(StandardCharsets.UTF_8);
+			out.writeInt(b.length); // write length of the message
+			out.write(b);
+			// retorno
+			int length = in.readInt();
+			String data = null;
+			if (length > 0) {
+				byte[] message = new byte[length];
+				in.readFully(message, 0, message.length); // read the message
+				data = new String(message, StandardCharsets.US_ASCII);
+//				System.out.println("mensagem aqui " + s);
+			}
+			// String data = in.readUTF(); // read a line of data from the stream
+			mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+			List<DefaultIntegerSolution> pReturned = new ArrayList<>();
+
+			pReturned = mapper.readValue(data, new TypeReference<List<DefaultIntegerSolution>>() {
+			});
+			// testEqualityBetweenOriginalSolutionAndReturnOfParallelEvaluate(pr,population);
+			int i = 0;
+			for (DefaultIntegerSolution s : pReturned) {
+				for (int numberOfobjetive = 0; numberOfobjetive < this.problem
+						.getNumberOfObjectives(); numberOfobjetive++) {
+					population.get(i).setObjective(numberOfobjetive, s.getObjective(numberOfobjetive));
+				}
+				i += 1;
+			}
+
+		} catch (UnknownHostException e) {
+			System.out.println("Socket:" + e.getMessage());
+		} catch (EOFException e) {
+			System.out.println("EOF:" + e.getMessage());
+		} catch (IOException e) {
+			System.out.println("readline:" + e.getMessage());
+		} finally {
+			if (soc != null)
+				try {
+					soc.close();
+				} catch (IOException e) {
+					System.out.println("close:" + e.getMessage());
+				}
+		}
+
 		return population;
+
+	}
+
+	public void testEqualityBetweenOriginalSolutionAndReturnOfParallelEvaluate(List<DefaultIntegerSolution> pReturned,
+			List<S> population) {
+		int i = 0;
+		for (DefaultIntegerSolution VariableFromRetornedSolution : pReturned) {
+			String stringVariableFromOriginalPopulation = "[";
+			for (int k = 0; k < this.problem.getNumberOfVariables(); k++) {
+				if (k == 0) {
+					stringVariableFromOriginalPopulation += population.get(i).getVariableValueString(k);
+				} else {
+					stringVariableFromOriginalPopulation += ", " + population.get(i).getVariableValueString(k);
+				}
+			}
+			stringVariableFromOriginalPopulation += "]";
+			System.out.println("as soluções são iguais ? " + ((VariableFromRetornedSolution.getvariables()).toString())
+					.equals(stringVariableFromOriginalPopulation));
+			// .out.println(s.getVariableValue(1));
+			i += 1;
+		}
+
 	}
 
 	/**
@@ -532,22 +652,21 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 				}
 
 			}
-		} else if   (prop.getProperty("eliteSearch").equals("n") && prop.getProperty("randomEliteSearch").equals("y")){
-			
+		} else if (prop.getProperty("eliteSearch").equals("n") && prop.getProperty("randomEliteSearch").equals("y")) {
+
 			Random gerator = new Random();
 
-			Integer[] arrayIndices = new Integer[this.problem.getNumberOfObjectives()*2];
+			Integer[] arrayIndices = new Integer[this.problem.getNumberOfObjectives() * 2];
 
 			for (int i = 0; i < arrayIndices.length; i++) {
 				arrayIndices[i] = gerator.nextInt(population.size());
 			}
 
-
 			for (int i = 0; i < population.size(); i++) {
 				// chamada para a busca local
-				if (i == arrayIndices[0] || i == arrayIndices[1] || i == arrayIndices[2]
-						|| i == arrayIndices[3] || i == arrayIndices[4] || i == arrayIndices[5]
-						|| i == arrayIndices[6] || i == arrayIndices[7]) {
+				if (i == arrayIndices[0] || i == arrayIndices[1] || i == arrayIndices[2] || i == arrayIndices[3]
+						|| i == arrayIndices[4] || i == arrayIndices[5] || i == arrayIndices[6]
+						|| i == arrayIndices[7]) {
 					System.out.println("Solução da escolha randomica indice " + i);
 					IntegerSolution s2 = (changeMatrixElement((IntegerSolution) population.get(i).copy(),
 							numberNeighbors));// muda
@@ -575,12 +694,8 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 				}
 
 			}
-			
-			
-			
-			
-			
-		}else {
+
+		} else {
 
 			for (Solution s1 : population) {
 				// chamada para a busca local
@@ -888,6 +1003,14 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 
 	public int getLocalSeachFoundNoDominated() {
 		return LocalSeachFoundNoDominated;
+	}
+
+	public int getCont() {
+		return cont;
+	}
+
+	public void setCont(int cont) {
+		this.cont = cont;
 	}
 
 	public void printFinalSolutionSet(List<? extends Solution<?>> population) {

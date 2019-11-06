@@ -19,8 +19,8 @@ import cbic15.Pattern;
  */
 @SuppressWarnings("serial")
 public abstract class AbstractGenericSolution<T, P extends Problem<?>> implements Solution<T> {
-  private double[] objectives;
-  private List<T> variables;
+  protected double[] objectives;// era provate coloquei protected para maper o jon
+  protected List<T> variables; // era provate coloquei protected para maper o jon
   protected P problem ;
   protected Map<Object, Object> attributes ;
   protected final JMetalRandom randomGenerator ;
@@ -38,6 +38,15 @@ public abstract class AbstractGenericSolution<T, P extends Problem<?>> implement
     for (int i = 0; i < problem.getNumberOfVariables(); i++) {
       variables.add(i, null) ;
     }
+  }
+  /**
+	 * construtor vazio colocado apenas por causa do mapeamento do json Jackson
+	 * para a parte de paralelistmo, antes isso não existia no projeto, não use para outra coisa
+	 */
+
+  protected AbstractGenericSolution() {
+	  randomGenerator = JMetalRandom.getInstance() ;
+	  attributes = new HashMap<>() ;// teste
   }
   
 
@@ -127,6 +136,27 @@ public abstract class AbstractGenericSolution<T, P extends Problem<?>> implement
     result = 31 * result + attributes.hashCode();
     return result;
   }
+  
+
+  /**
+	 * construtor vazio colocado apenas por causa do mapeamento do json Jackson
+	 * para a parte de paralelistmo, antes isso não existia no projeto, não use para outra coisa
+	 */
+
+public void setVariables(List<T> variables) {
+	this.variables = variables;
+}
+public List<T> getvariables() {
+	// TODO Auto-generated method stub
+	return variables;
+}
+public double[] getObjectives() {
+	return objectives;
+}
+public void setObjectives(double[] objectives) {
+	this.objectives = objectives;
+}
+
 
 
   
