@@ -33,11 +33,12 @@ public class ParallelSolutionListEvaluate<S> extends Thread implements SolutionL
 	private List<List<S>> remotEvaluate;
 	private List<S> solutionList;
 	private Problem<S> problem;
-	private List<UUID> ParallelEvaluateIdList;
+//	private List<UUID> ParallelEvaluateIdList;
+	private List <SeverAndId> severAndIdList;
 
-	public ParallelSolutionListEvaluate(List<UUID> ParallelEvaluateIdList) {
+	public ParallelSolutionListEvaluate(List <SeverAndId> severAndIdList) {
 		super();
-		this.ParallelEvaluateIdList = ParallelEvaluateIdList;
+		this.severAndIdList = severAndIdList;
 	}
 
 	/**
@@ -54,7 +55,8 @@ public class ParallelSolutionListEvaluate<S> extends Thread implements SolutionL
 		// lista de lista remoras, tem o tamanho da lista de id de servidores
 		List<List<S>> remotEvaluate = new ArrayList<>();
 		// numero de servidores disponivel
-		int numberOfServers = this.ParallelEvaluateIdList.size();
+//		int numberOfServers = this.ParallelEvaluateIdList.size();
+		int numberOfServers = this.severAndIdList.size();
 		// preparando x listas de solution onde x= numero de servidores
 		for (int i = 0; i < numberOfServers; i++) {
 			List<S> l = new ArrayList<>();
@@ -72,41 +74,23 @@ public class ParallelSolutionListEvaluate<S> extends Thread implements SolutionL
 
 		}
 
-//		int SliceSolutioListSize=
-//		double temp=solutionList.size()*50;
-//		temp=temp/100;
-//		int populationSize=(int)temp;
-//		
-//		
-//		for (int i=0;i<populationSize;i++) {
-//			remotEvaluate.add(solutionList.get(i));
-//		}
-//		for (int i=populationSize;i<solutionList.size();i++) {
-//			localEvaluate.add(solutionList.get(i));
-//		}
+
 		this.localEvaluate = localEvaluate;
 		this.remotEvaluate = remotEvaluate;
 		this.problem = problem;
 		List<RemotePoolEvaluate> rList = new ArrayList<>();
 		
 		
-		for (int w = 0; w < this.ParallelEvaluateIdList.size(); w++) {
+		for (int w = 0; w < this.severAndIdList.size(); w++) {
 			RemotePoolEvaluate y = new RemotePoolEvaluate(this.remotEvaluate.get(w), problem,
-					this.ParallelEvaluateIdList.get(w));
+					this.severAndIdList.get(w));
 			rList.add(y);
 		}
-//		LocalPoolEvaluate x = new LocalPoolEvaluate(localEvaluate, problem);
-//		RemotePoolEvaluate y = new RemotePoolEvaluate(remotEvaluate, problem, this.ParallelEvaluateId);
 		for (RemotePoolEvaluate r:rList) {
 			r.start();
 			
 		}
-//		x.start();
-//		y.start();
-//		this.start();
 		try {
-//			x.join();
-//			y.join();
 			for (RemotePoolEvaluate r:rList) {
 				r.join();
 				
@@ -117,88 +101,6 @@ public class ParallelSolutionListEvaluate<S> extends Thread implements SolutionL
 		return solutionList;
 	}
 
-//	@Override
-//	public void run() {
-//
-//		localEvaluate.stream().forEach(s -> problem.evaluate(s));
-//		evaluatePopulationparallel(this.remotEvaluate);
-//
-//	}
-
-//	
-//	protected /* List<S> */void evaluatePopulationparallel(List<S> population) {
-//		Socket soc = null;
-//		ObjectMapper mapper = new ObjectMapper();
-//		String textOut = null;
-//		try {
-//			textOut = mapper.writeValueAsString(population);
-//			List<String> l = new ArrayList<>();
-//			l.add((this.ParallelEvaluateId).toString());
-//			l.add(textOut);
-//			textOut = mapper.writeValueAsString(l);
-//
-//		} catch (JsonProcessingException e1) {
-//			// TODO Auto-generated catch block
-//			e1.printStackTrace();
-//		}
-//
-//		String adress = "localhost";
-//		try {
-//			int serverPort = 7896;
-//			soc = new Socket(adress, serverPort);
-//			DataInputStream in = new DataInputStream(soc.getInputStream());
-//			DataOutputStream out = new DataOutputStream(soc.getOutputStream());
-//
-////			int length = out.readInt(); // read length of incoming message
-//
-//			byte[] b = textOut.getBytes(StandardCharsets.UTF_8);
-//			out.writeInt(b.length); // write length of the message
-//			out.write(b);
-//			// retorno
-//			int length = in.readInt();
-//			String data = null;
-//			if (length > 0) {
-//				byte[] message = new byte[length];
-//				in.readFully(message, 0, message.length); // read the message
-//				data = new String(message, StandardCharsets.US_ASCII);
-////				System.out.println("mensagem aqui " + s);
-//			}
-//			// String data = in.readUTF(); // read a line of data from the stream
-//			mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-//			List<DefaultIntegerSolution> pReturned = new ArrayList<>();
-//
-//			pReturned = mapper.readValue(data, new TypeReference<List<DefaultIntegerSolution>>() {
-//			});
-//			// testEqualityBetweenOriginalSolutionAndReturnOfParallelEvaluate(pr,population);
-//			int i = 0;
-//			for (DefaultIntegerSolution s : pReturned) {
-//				for (int numberOfobjetive = 0; numberOfobjetive < this.problem
-//						.getNumberOfObjectives(); numberOfobjetive++) {
-//					((AbstractGenericSolution<Integer, IntegerProblem>) population.get(i))
-//							.setObjective(numberOfobjetive, s.getObjective(numberOfobjetive));
-//				}
-//				i += 1;
-//			}
-//
-//		} catch (UnknownHostException e) {
-//			System.out.println("Socket:" + e.getMessage());
-//		} catch (EOFException e) {
-//			System.out.println("EOF:" + e.getMessage());
-//		} catch (IOException e) {
-//			System.out.println("readline:" + e.getMessage());
-//		} finally {
-//			if (soc != null)
-//				try {
-//					soc.close();
-//				} catch (IOException e) {
-//					System.out.println("close:" + e.getMessage());
-//				}
-//		}
-//
-//		// return population;
-//
-//	}
-//	
 
 	@Override
 	public void shutdown() {
@@ -229,12 +131,17 @@ class RemotePoolEvaluate<S> extends Thread {
 	private List<S> remotEvaluate;
 	private Problem<S> problem;
 	private UUID ParallelEvaluateId;
+	private String url;
+	private Integer serverPort;
 
-	public RemotePoolEvaluate(List<S> remotEvaluate, Problem<S> problem, UUID ParallelEvaluateId) {
+	public RemotePoolEvaluate(List<S> remotEvaluate, Problem<S> problem, SeverAndId idAndUrl ) {
 
 		this.remotEvaluate = remotEvaluate;
 		this.problem = problem;
-		this.ParallelEvaluateId = ParallelEvaluateId;
+		this.ParallelEvaluateId = idAndUrl.getId();
+		url=idAndUrl.getUrl().get(0);
+		serverPort=Integer.parseInt(idAndUrl.getUrl().get(1));
+		
 	}
 
 	@Override
@@ -254,9 +161,9 @@ class RemotePoolEvaluate<S> extends Thread {
 			e1.printStackTrace();
 		}
 
-		String adress = "localhost";
+		String adress = this.url;
 		try {
-			int serverPort = 7896;
+			int serverPort = this.serverPort;
 			soc = new Socket(adress, serverPort);
 			DataInputStream in = new DataInputStream(soc.getInputStream());
 			DataOutputStream out = new DataOutputStream(soc.getOutputStream());

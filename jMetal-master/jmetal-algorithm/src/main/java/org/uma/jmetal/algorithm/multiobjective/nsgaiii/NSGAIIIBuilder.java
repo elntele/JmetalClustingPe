@@ -13,6 +13,7 @@ import org.uma.jmetal.util.AlgorithmBuilder;
 import org.uma.jmetal.util.evaluator.SolutionListEvaluator;
 import org.uma.jmetal.util.evaluator.impl.ParallelSolutionListEvaluate;
 import org.uma.jmetal.util.evaluator.impl.SequentialSolutionListEvaluator;
+import org.uma.jmetal.util.evaluator.impl.SeverAndId;
 
 import br.cns.model.GmlData;
 import cbic15.Pattern;
@@ -29,23 +30,25 @@ public class NSGAIIIBuilder<S extends Solution<?>> implements AlgorithmBuilder<N
 	private GmlData gml;
 	private List<Pattern>[] clustters;
 	private Properties prop;
-	private List <UUID> ParallelEvaluateId;
+	//organizae e deletar
+//	private List <UUID> ParallelEvaluateId;
+	List <SeverAndId> severAndIdList;
 	private SolutionListEvaluator<S> evaluator;
 	private SolutionListEvaluator<S> parallelEvaluator;
 
 	
 	
 	/** Builder constructor */
-	public NSGAIIIBuilder(Problem<S> problem, GmlData gml, List<Pattern>[] clustters, Properties prop, List <UUID> ParallelEvaluateIdList) {
+	public NSGAIIIBuilder(Problem<S> problem, GmlData gml, List<Pattern>[] clustters, Properties prop, List <SeverAndId> severAndIdList) {
 		this.problem = problem;
 		maxIterations = 250;
 		populationSize = 100;
 		evaluator = new SequentialSolutionListEvaluator<S>();
-		parallelEvaluator = new ParallelSolutionListEvaluate<S>(ParallelEvaluateIdList);
+		parallelEvaluator = new ParallelSolutionListEvaluate<S>(severAndIdList);
 		this.gml = gml;
 		this.clustters = clustters;
 		this.prop=prop;
-		this.ParallelEvaluateId=ParallelEvaluateIdList;
+		severAndIdList=severAndIdList;
 	}
 	
 	
@@ -70,21 +73,21 @@ public class NSGAIIIBuilder<S extends Solution<?>> implements AlgorithmBuilder<N
 
 
 
-
-	public List<UUID> getParallelEvaluateId() {
-		return ParallelEvaluateId;
-	}
-
-
-
-
-
-
-	public void setParallelEvaluateId(List<UUID> parallelEvaluateId) {
-		ParallelEvaluateId = parallelEvaluateId;
-	}
-
-
+//
+//	public List<UUID> getParallelEvaluateId() {
+//		return ParallelEvaluateId;
+//	}
+//
+//
+//
+//
+//
+//
+//	public void setParallelEvaluateId(List<UUID> parallelEvaluateId) {
+//		ParallelEvaluateId = parallelEvaluateId;
+//	}
+//
+//
 
 
 
