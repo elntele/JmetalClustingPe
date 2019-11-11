@@ -85,7 +85,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 
 		/// NSGAIII
 		numberOfDivisions = new Vector<>(1);
-		numberOfDivisions.add(4); // Default value for 3D problems (is 12 never forget jorge)
+		numberOfDivisions.add(12); // Default value for 3D problems (is 12 never forget jorge)
 
 		(new ReferencePoint<S>()).generateReferencePoints(referencePoints, getProblem().getNumberOfObjectives(),
 				numberOfDivisions);
@@ -589,35 +589,6 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 			Integer[] arrayIndiceUpper = takeNUpperSolutiox(arrayObjetiveValueLower.clone(), population,
 					arrayIndiceLower.clone());
 
-			/*
-			 * for (int i = 0; i < population.size(); i++) { if
-			 * (Double.parseDouble(population.get(i).getVariableValueString(0)) <
-			 * arrayObjetiveValueLower[0]) { arrayObjetiveValueLower[0] =
-			 * Double.parseDouble(population.get(i).getVariableValueString(0));
-			 * arrayIndice[0] = i; } }
-			 * 
-			 * for (int i = 0; i < population.size(); i++) { if
-			 * ((Double.parseDouble(population.get(i).getVariableValueString(1)) <
-			 * arrayObjetiveValueLower[1]) && (arrayIndice[0] != i)) {
-			 * arrayObjetiveValueLower[1] =
-			 * Double.parseDouble(population.get(i).getVariableValueString(1));
-			 * arrayIndice[1] = i; } }
-			 * 
-			 * for (int i = 0; i < population.size(); i++) { if
-			 * ((Double.parseDouble(population.get(i).getVariableValueString(2)) <
-			 * arrayObjetiveValueLower[2]) && (arrayIndice[0] != i) && (arrayIndice[1] !=
-			 * i)) { arrayObjetiveValueLower[2] =
-			 * Double.parseDouble(population.get(i).getVariableValueString(2));
-			 * arrayIndice[2] = i; } }
-			 * 
-			 * for (int i = 0; i < population.size(); i++) { if
-			 * ((Double.parseDouble(population.get(i).getVariableValueString(3)) <
-			 * arrayObjetiveValueLower[3] && (arrayIndice[0] != i) && (arrayIndice[1] != i)
-			 * && (arrayIndice[2] != i))) { arrayObjetiveValueLower[3] =
-			 * Double.parseDouble(population.get(i).getVariableValueString(3));
-			 * arrayIndice[3] = i; } }
-			 */
-
 			// Jorge candeias
 
 			for (int i = 0; i < population.size(); i++) {
@@ -738,59 +709,218 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	public List<S> localSearchTestingAll(List<S> population, int numberNeighbors) {
 		List<S> copySolution = new ArrayList<>(population.size());
 		// voltar aqui
-		for (Solution s1 : population) {
-			Solution copyInterge = s1.copy();
+		if (prop.getProperty("eliteSearch").equals("y")) {
+			Double[] arrayObjetiveValueLower = new Double[this.problem.getNumberOfObjectives()];
+			Double[] arrayObjetiveValueUpper = new Double[this.problem.getNumberOfObjectives()];
+
+			for (int i = 0; i < arrayObjetiveValueLower.length; i++) {
+				arrayObjetiveValueLower[i] = Double.MIN_VALUE;
+				arrayObjetiveValueUpper[i] = Double.MAX_VALUE;
+			}
+
+			Integer[] arrayIndiceLower = takeNLowerSolutiox(arrayObjetiveValueUpper.clone(), population);
+			Integer[] arrayIndiceUpper = takeNUpperSolutiox(arrayObjetiveValueLower.clone(), population,
+					arrayIndiceLower.clone());
+
+			// Jorge candeias
+
+			for (int i = 0; i < population.size(); i++) {
+				// chamada para a busca local
+				if (i == arrayIndiceLower[0] || i == arrayIndiceLower[1] || i == arrayIndiceLower[2]
+						|| i == arrayIndiceLower[3] || i == arrayIndiceUpper[0] || i == arrayIndiceUpper[1]
+						|| i == arrayIndiceUpper[2] || i == arrayIndiceUpper[3]) {
+					System.out.println("Solução top indice " + i);
+
+					Solution copyInterge = population.get(i).copy();
+					Random clusteRandomPicker = new Random();
+					int clusterNumber = clusteRandomPicker.nextInt(population.get(i).copy().getLineColumn().length);
+					// *****************************************************************
+					// esta parte foi add para evitar que cluster de um elemento só seja sorteado
+					while (this.clustters[clusterNumber].size() < 2) {
+						clusterNumber = clusteRandomPicker.nextInt(population.get(i).getLineColumn().length);
+					}
+					// ******************************************************************
+					// retorna uma lista (Litlepattern) com os "numberNeighbors" vizinhos mais
+					// próximos
+					List<Pattern> Litlepattern = changeOneIndexOfMatrixTestingAll((clusterNumber),
+							population.get(i).copy().getLineColumn().clone(), numberNeighbors);
+
+					// iteração na lista de vizinhos mais próximos
+//					int x=0;
+					boolean stop = false;
+					S sDominator = (S) population.get(i).copy();
+
+					for (Pattern p : Litlepattern) {
+						Pattern[] tempPattern = population.get(i).getLineColumn().clone();
+						tempPattern[clusterNumber] = p;
+						copyInterge.setLineColumn(tempPattern);
+						IntegerSolution s2 = (IntegerSolution) copyInterge;
+
+						this.problem.evaluate((S) s2);
+
+						switch (coparation((IntegerSolution) population.get(i), s2)) {
+						case -1:
+//							System.out.println("entrei em -1e este é x "+x);
+							break;
+						case 0:
+//							System.out.println("entrei em 0 este é x "+x);
+							break;
+						case 1:
+							sDominator = (S) s2.copy();
+//							System.out.println("entrei em 1 e este é x "+x);
+							stop = true;
+							break;
+						default:
+							System.out.println("deu falha no compara");
+							break;
+						}
+						if (stop) {
+							break;
+						}
+//						x+=1;
+					}
+					copySolution.add((S) sDominator);
+
+				} else {
+					copySolution.add((S) population.get(i));
+
+				}
+
+			}
+		} else if (prop.getProperty("eliteSearch").equals("n") && prop.getProperty("randomEliteSearch").equals("y")) {
+
 			Random gerator = new Random();
-			int clusterNumber = gerator.nextInt(s1.copy().getLineColumn().length);
-			// *****************************************************************
-			// esta parte foi add para evitar que cluster de um elemento só seja sorteado
-			while (this.clustters[clusterNumber].size() < 2) {
-				clusterNumber = gerator.nextInt(s1.getLineColumn().length);
+
+			Integer[] arrayIndices = new Integer[this.problem.getNumberOfObjectives() * 2];
+
+			for (int i = 0; i < arrayIndices.length; i++) {
+				arrayIndices[i] = gerator.nextInt(population.size());
 			}
-			// ******************************************************************
-			// retorna uma lista (Litlepattern) com os "numberNeighbors" vizinhos mais
-			// próximos
-			List<Pattern> Litlepattern = changeOneIndexOfMatrixTestingAll((clusterNumber),
-					s1.copy().getLineColumn().clone(), numberNeighbors);
 
-			// iteração na lista de vizinhos mais próximos
-//			int x=0;
-			boolean stop = false;
-			S sDominator = (S) s1.copy();
+			for (int i = 0; i < population.size(); i++) {
+				// chamada para a busca local
+				if (i == arrayIndices[0] || i == arrayIndices[1] || i == arrayIndices[2] || i == arrayIndices[3]
+						|| i == arrayIndices[4] || i == arrayIndices[5] || i == arrayIndices[6]
+						|| i == arrayIndices[7]) {
 
-			for (Pattern p : Litlepattern) {
-				Pattern[] tempPattern = s1.getLineColumn().clone();
-				tempPattern[clusterNumber] = p;
-				copyInterge.setLineColumn(tempPattern);
-				IntegerSolution s2 = (IntegerSolution) copyInterge;
+					System.out.println("Solução da escolha randomica indice " + i);
 
-				this.problem.evaluate((S) s2);
+					Solution copyInterge = population.get(i).copy();
+					Random clusteRandomPicker = new Random();
+					int clusterNumber = clusteRandomPicker.nextInt(population.get(i).copy().getLineColumn().length);
+					// *****************************************************************
+					// esta parte foi add para evitar que cluster de um elemento só seja sorteado
+					while (this.clustters[clusterNumber].size() < 2) {
+						clusterNumber = clusteRandomPicker.nextInt(population.get(i).getLineColumn().length);
+					}
+					// ******************************************************************
+					// retorna uma lista (Litlepattern) com os "numberNeighbors" vizinhos mais
+					// próximos
+					List<Pattern> Litlepattern = changeOneIndexOfMatrixTestingAll((clusterNumber),
+							population.get(i).copy().getLineColumn().clone(), numberNeighbors);
 
-				switch (coparation((IntegerSolution) s1, s2)) {
-				case -1:
-//					System.out.println("entrei em -1e este é x "+x);
-					break;
-				case 0:
-//					System.out.println("entrei em 0 este é x "+x);
-					break;
-				case 1:
-					sDominator = (S) s2.copy();
-//					System.out.println("entrei em 1 e este é x "+x);
-					stop = true;
-					break;
-				default:
-					System.out.println("deu falha no compara");
-					break;
+					// iteração na lista de vizinhos mais próximos
+//					int x=0;
+					boolean stop = false;
+					S sDominator = (S) population.get(i).copy();
+
+					for (Pattern p : Litlepattern) {
+						Pattern[] tempPattern = population.get(i).getLineColumn().clone();
+						tempPattern[clusterNumber] = p;
+						copyInterge.setLineColumn(tempPattern);
+						IntegerSolution s2 = (IntegerSolution) copyInterge;
+
+						this.problem.evaluate((S) s2);
+
+						switch (coparation((IntegerSolution) population.get(i), s2)) {
+						case -1:
+//							System.out.println("entrei em -1e este é x "+x);
+							break;
+						case 0:
+//							System.out.println("entrei em 0 este é x "+x);
+							break;
+						case 1:
+							sDominator = (S) s2.copy();
+//							System.out.println("entrei em 1 e este é x "+x);
+							stop = true;
+							break;
+						default:
+							System.out.println("deu falha no compara");
+							break;
+						}
+						if (stop) {
+							break;
+						}
+					}
+					copySolution.add((S) sDominator);
+
+				} else {
+					copySolution.add((S) population.get(i));
+
 				}
-				if (stop) {
-					break;
-				}
-//				x+=1;
+
 			}
-			copySolution.add((S) sDominator);
+
+		} else {
+
+			for (Solution s1 : population) {
+				Solution copyInterge = s1.copy();
+				Random gerator = new Random();
+				int clusterNumber = gerator.nextInt(s1.copy().getLineColumn().length);
+				// *****************************************************************
+				// esta parte foi add para evitar que cluster de um elemento só seja sorteado
+				while (this.clustters[clusterNumber].size() < 2) {
+					clusterNumber = gerator.nextInt(s1.getLineColumn().length);
+				}
+				// ******************************************************************
+				// retorna uma lista (Litlepattern) com os "numberNeighbors" vizinhos mais
+				// próximos
+				List<Pattern> Litlepattern = changeOneIndexOfMatrixTestingAll((clusterNumber),
+						s1.copy().getLineColumn().clone(), numberNeighbors);
+
+				// iteração na lista de vizinhos mais próximos
+//				int x=0;
+				boolean stop = false;
+				S sDominator = (S) s1.copy();
+
+				for (Pattern p : Litlepattern) {
+					Pattern[] tempPattern = s1.getLineColumn().clone();
+					tempPattern[clusterNumber] = p;
+					copyInterge.setLineColumn(tempPattern);
+					IntegerSolution s2 = (IntegerSolution) copyInterge;
+
+					this.problem.evaluate((S) s2);
+
+					switch (coparation((IntegerSolution) s1, s2)) {
+					case -1:
+//						System.out.println("entrei em -1e este é x "+x);
+						break;
+					case 0:
+//						System.out.println("entrei em 0 este é x "+x);
+						break;
+					case 1:
+						sDominator = (S) s2.copy();
+//						System.out.println("entrei em 1 e este é x "+x);
+						stop = true;
+						break;
+					default:
+						System.out.println("deu falha no compara");
+						break;
+					}
+					if (stop) {
+						break;
+					}
+//					x+=1;
+				}
+				copySolution.add((S) sDominator);
+			}
+
 		}
 
 		return copySolution;
+
+		// fim da injeção de código
+
 	}
 
 	/**
@@ -802,55 +932,207 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 			int numberNeighbors) {
 		List<S> copySolution = new ArrayList<>(population.size());
 
-		for (Solution s1 : population) {
-			Solution copyInterge = s1.copy();
-			Random gerator = new Random();
-			int clusterNumber = gerator.nextInt(s1.copy().getLineColumn().length);
-			// *****************************************************************
-			// esta parte foi add para evitar que cluster de um elemento só seja sorteado
-			while (this.clustters[clusterNumber].size() < 2) {
-				clusterNumber = gerator.nextInt(s1.getLineColumn().length);
+		if (prop.getProperty("eliteSearch").equals("y")) {
+			Double[] arrayObjetiveValueLower = new Double[this.problem.getNumberOfObjectives()];
+			Double[] arrayObjetiveValueUpper = new Double[this.problem.getNumberOfObjectives()];
+
+			for (int i = 0; i < arrayObjetiveValueLower.length; i++) {
+				arrayObjetiveValueLower[i] = Double.MIN_VALUE;
+				arrayObjetiveValueUpper[i] = Double.MAX_VALUE;
 			}
-			// ******************************************************************
 
-			// retorna uma lista (Litlepattern) com os "numberNeighbors" vizinhos mais
-			// próximos
-			List<Pattern> Litlepattern = changeOneIndexOfMatrixTestingAll((clusterNumber),
-					s1.copy().getLineColumn().clone(), numberNeighbors);
+			Integer[] arrayIndiceLower = takeNLowerSolutiox(arrayObjetiveValueUpper.clone(), population);
+			Integer[] arrayIndiceUpper = takeNUpperSolutiox(arrayObjetiveValueLower.clone(), population,
+					arrayIndiceLower.clone());
 
-			// iteração na lista de vizinhos mais próximos
-			int x = 0;
-			S sDominator = (S) s1.copy();
+			// Jorge candeias
 
-			for (Pattern p : Litlepattern) {
-				Pattern[] tempPattern = s1.getLineColumn().clone();
-				tempPattern[clusterNumber] = p;
-				copyInterge.setLineColumn(tempPattern);
-				IntegerSolution s2 = (IntegerSolution) copyInterge;
+			for (int i = 0; i < population.size(); i++) {
+				// chamada para a busca local
+				if (i == arrayIndiceLower[0] || i == arrayIndiceLower[1] || i == arrayIndiceLower[2]
+						|| i == arrayIndiceLower[3] || i == arrayIndiceUpper[0] || i == arrayIndiceUpper[1]
+						|| i == arrayIndiceUpper[2] || i == arrayIndiceUpper[3]) {
+					System.out.println("Solução top indice " + i);
 
-				this.problem.evaluate((S) s2);
+					Solution copyInterge = population.get(i).copy();
+					Random gerator = new Random();
+					int clusterNumber = gerator.nextInt(population.get(i).copy().getLineColumn().length);
+					// *****************************************************************
+					// esta parte foi add para evitar que cluster de um elemento só seja sorteado
+					while (this.clustters[clusterNumber].size() < 2) {
+						clusterNumber = gerator.nextInt(population.get(i).getLineColumn().length);
+					}
+					// ******************************************************************
 
-				switch (coparation((IntegerSolution) s1, s2)) {
-				case -1:
-					System.out.println("entrei em -1e este é x " + x);
-					break;
-				case 0:
-					System.out.println("entrei em 0 este é x " + x);
-					break;
-				case 1:
-					sDominator = (S) s2.copy();// a nova soção assumi o lugar de dominador
-					s1 = (S) s2.copy();// a nova soção assumi o lugar de S1 para ser comparada com outros vizinhos na
-										// busca
-					System.out.println("entrei em 1 e este é x " + x);
-					break;
-				default:
-					System.out.println("deu falha no compara");
-					break;
+					// retorna uma lista (Litlepattern) com os "numberNeighbors" vizinhos mais
+					// próximos
+					List<Pattern> Litlepattern = changeOneIndexOfMatrixTestingAll((clusterNumber),
+							population.get(i).copy().getLineColumn().clone(), numberNeighbors);
+
+					// iteração na lista de vizinhos mais próximos
+					int x = 0;
+					S sDominator = (S) population.get(i).copy();
+
+					for (Pattern p : Litlepattern) {
+						Pattern[] tempPattern = population.get(i).getLineColumn().clone();
+						tempPattern[clusterNumber] = p;
+						copyInterge.setLineColumn(tempPattern);
+						IntegerSolution s2 = (IntegerSolution) copyInterge;
+
+						this.problem.evaluate((S) s2);
+
+						switch (coparation((IntegerSolution) population.get(i), s2)) {
+						case -1:
+							break;
+						case 0:
+							break;
+						case 1:
+							sDominator = (S) s2.copy();// a nova solução assumi o lugar de dominador
+							population.remove(i);
+							population.add(i,(S) s2.copy());// a nova solução assumi o lugar de anterior para ser comparada com outros
+												// vizinhos na
+												// busca
+							break;
+						default:
+							System.out.println("deu falha no compara");
+							break;
+						}
+
+						x += 1;
+					}
+					copySolution.add((S) sDominator);
+				} else {
+					copySolution.add((S) population.get(i));
+
 				}
 
-				x += 1;
 			}
-			copySolution.add((S) sDominator);
+		} else if (prop.getProperty("eliteSearch").equals("n") && prop.getProperty("randomEliteSearch").equals("y")) {
+
+			Random gerator = new Random();
+
+			Integer[] arrayIndices = new Integer[this.problem.getNumberOfObjectives() * 2];
+
+			for (int i = 0; i < arrayIndices.length; i++) {
+				arrayIndices[i] = gerator.nextInt(population.size());
+			}
+
+			for (int i = 0; i < population.size(); i++) {
+				// chamada para a busca local
+				if (i == arrayIndices[0] || i == arrayIndices[1] || i == arrayIndices[2] || i == arrayIndices[3]
+						|| i == arrayIndices[4] || i == arrayIndices[5] || i == arrayIndices[6]
+						|| i == arrayIndices[7]) {
+
+					System.out.println("Solução da escolha randomica indice " + i);
+
+					// *************************
+					Solution copyInterge = population.get(i).copy();
+					Random clusteRandomPicker = new Random();
+					int clusterNumber = clusteRandomPicker.nextInt(population.get(i).copy().getLineColumn().length);
+					// *****************************************************************
+					// esta parte foi add para evitar que cluster de um elemento só seja sorteado
+					while (this.clustters[clusterNumber].size() < 2) {
+						clusterNumber = clusteRandomPicker.nextInt(population.get(i).getLineColumn().length);
+					}
+					// ******************************************************************
+
+					// retorna uma lista (Litlepattern) com os "numberNeighbors" vizinhos mais
+					// próximos
+					List<Pattern> Litlepattern = changeOneIndexOfMatrixTestingAll((clusterNumber),
+							population.get(i).copy().getLineColumn().clone(), numberNeighbors);
+
+					// iteração na lista de vizinhos mais próximos
+					int x = 0;
+					S sDominator = (S) population.get(i).copy();
+
+					for (Pattern p : Litlepattern) {
+						Pattern[] tempPattern = population.get(i).getLineColumn().clone();
+						tempPattern[clusterNumber] = p;
+						copyInterge.setLineColumn(tempPattern);
+						IntegerSolution s2 = (IntegerSolution) copyInterge;
+
+						this.problem.evaluate((S) s2);
+
+						switch (coparation((IntegerSolution) population.get(i), s2)) {
+						case -1:
+							break;
+						case 0:
+							break;
+						case 1:
+							sDominator = (S) s2.copy();// a nova solução assumi o lugar de dominador
+							population.remove(i);
+							population.add(i,(S) s2.copy());// a nova solução assumi o lugar de anterior para ser comparada com outros
+												// vizinhos na
+												// busca
+							break;
+						default:
+							System.out.println("deu falha no compara");
+							break;
+						}
+
+						x += 1;
+					}
+					copySolution.add((S) sDominator);
+				} else {
+					copySolution.add((S) population.get(i));
+
+				}
+
+			}
+
+
+
+		} else {
+
+			for (Solution s1 : population) {
+				Solution copyInterge = s1.copy();
+				Random gerator = new Random();
+				int clusterNumber = gerator.nextInt(s1.copy().getLineColumn().length);
+				// *****************************************************************
+				// esta parte foi add para evitar que cluster de um elemento só seja sorteado
+				while (this.clustters[clusterNumber].size() < 2) {
+					clusterNumber = gerator.nextInt(s1.getLineColumn().length);
+				}
+				// ******************************************************************
+
+				// retorna uma lista (Litlepattern) com os "numberNeighbors" vizinhos mais
+				// próximos
+				List<Pattern> Litlepattern = changeOneIndexOfMatrixTestingAll((clusterNumber),
+						s1.copy().getLineColumn().clone(), numberNeighbors);
+
+				// iteração na lista de vizinhos mais próximos
+				int x = 0;
+				S sDominator = (S) s1.copy();
+
+				for (Pattern p : Litlepattern) {
+					Pattern[] tempPattern = s1.getLineColumn().clone();
+					tempPattern[clusterNumber] = p;
+					copyInterge.setLineColumn(tempPattern);
+					IntegerSolution s2 = (IntegerSolution) copyInterge;
+
+					this.problem.evaluate((S) s2);
+
+					switch (coparation((IntegerSolution) s1, s2)) {
+					case -1:
+						break;
+					case 0:
+						break;
+					case 1:
+						sDominator = (S) s2.copy();// a nova solução assumi o lugar de dominador
+						s1 = (S) s2.copy();// a nova solução assumi o lugar de S1 para ser comparada com outros vizinhos
+											// na
+											// busca
+						break;
+					default:
+						System.out.println("deu falha no compara");
+						break;
+					}
+
+					x += 1;
+				}
+				copySolution.add((S) sDominator);
+			}
+
 		}
 
 		return copySolution;
