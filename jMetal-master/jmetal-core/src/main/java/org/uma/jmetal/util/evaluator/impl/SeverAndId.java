@@ -3,9 +3,20 @@ package org.uma.jmetal.util.evaluator.impl;
 import java.util.List;
 import java.util.UUID;
 
-public class SeverAndId {
+public class SeverAndId implements Comparable  {
 	private UUID id;
 	private List <String>  url;
+	private long executionTime;
+	private int slice;
+	private double velocity;
+	private int lastEvaluateSize;
+	
+	public long getExecutionTime() {
+		return executionTime;
+	}
+	public void setExecutionTime(long executionTime) {
+		this.executionTime = executionTime;
+	}
 	public SeverAndId(UUID id, List<String> url) {
 		super();
 		this.id = id;
@@ -23,6 +34,36 @@ public class SeverAndId {
 	public void setUrl(List<String> url) {
 		this.url = url;
 	}
+		
+	public double getVelocity() {
+		return velocity;
+	}
+	public void setVelocity(double velocity) {
+		this.velocity = velocity;
+	}
+	public int getSlice() {
+		return slice;
+	}
+	public void setSlice(int slice) {
+		this.slice = slice;
+	}
+	
+	
+	public int getLastEvaluateSize() {
+		return lastEvaluateSize;
+	}
+	public void setLastEvaluateSize(int lastEvaluateSize) {
+		this.lastEvaluateSize = lastEvaluateSize;
+	}
+	/**
+	 * metodo inserido para ordenação de listas de objetos severAndId
+	 */
+	@Override
+	public int compareTo(Object sever) {
+		int compareExecutionTime=(int)((SeverAndId)sever).getExecutionTime();
+		return (int) (this.executionTime-compareExecutionTime);
+	}
+	
 
 
 }

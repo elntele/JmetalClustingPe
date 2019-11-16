@@ -7,7 +7,10 @@ import java.io.IOException;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -22,6 +25,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import br.cns.metrics.TotalDistance;
+
 /**
  * 
  * @author jorge candeias class implements the evaluating concurrent with a
@@ -33,11 +38,11 @@ public class ParallelSolutionListEvaluate<S> extends Thread implements SolutionL
 	private List<List<S>> remotEvaluate;
 	private List<S> solutionList;
 	private Problem<S> problem;
-	private List <SeverAndId> severAndIdList;
+	private List<SeverAndId> severAndIdList;
 	private int AuxiliarCountParallelEvaluation;
-	
+	private boolean isStartEvaluate = true;
 
-	public ParallelSolutionListEvaluate(List <SeverAndId> severAndIdList) {
+	public ParallelSolutionListEvaluate(List<SeverAndId> severAndIdList) {
 		super();
 		this.severAndIdList = severAndIdList;
 	}
@@ -50,7 +55,7 @@ public class ParallelSolutionListEvaluate<S> extends Thread implements SolutionL
 
 	@Override
 	public List<S> evaluate(List<S> solutionList, Problem<S> problem) {
-
+		this.solutionList=solutionList;
 		// lista local vai cair em desuso
 		List<S> localEvaluate = new ArrayList<>();
 		// lista de lista remoras, tem o tamanho da lista de id de servidores
@@ -63,54 +68,130 @@ public class ParallelSolutionListEvaluate<S> extends Thread implements SolutionL
 			List<S> l = new ArrayList<>();
 			remotEvaluate.add(l);
 		}
-		int i = 0;
-		// distribuindo as sulutios entre as listas de solution no esquema uma m=pra mim
-		// outra pra tu
-		for (S s : solutionList) {
-			remotEvaluate.get(i).add(s);
-			i += 1;
-			if (i == numberOfServers) {
-				i = 0;
+
+		if (this.isStartEvaluate) {
+			// distribuindo as sulutios entre as listas de solution no esquema uma pra mim
+			// outra pra tu
+			int i = 0;
+			for (S s : solutionList) {
+				remotEvaluate.get(i).add(s);
+				i += 1;
+				if (i == numberOfServers) {
+					i = 0;
+				}
+
 			}
-
+			this.isStartEvaluate=false;
+		} else {// ditribuindo solucion de acordo com a velocidade do servidor
+			consultVelocity();
+			int remotIndice = 0;
+			int slice = 0;
+			int lastSlice=0;
+			for (SeverAndId s : this.severAndIdList) {
+				slice += s.getSlice();
+				if (remotIndice == (this.severAndIdList.size() - 1)) {
+					slice = solutionList.size();
+				}
+				for (int i = lastSlice; i < slice; i++) {
+					remotEvaluate.get(remotIndice).add(solutionList.get(i));
+				}
+				remotIndice += 1;
+				lastSlice=slice;
+			}
 		}
-
 
 		this.localEvaluate = localEvaluate;
 		this.remotEvaluate = remotEvaluate;
 		this.problem = problem;
 		List<RemotePoolEvaluate> rList = new ArrayList<>();
-		
-		
+
 		for (int w = 0; w < this.severAndIdList.size(); w++) {
 			RemotePoolEvaluate y = new RemotePoolEvaluate(this.remotEvaluate.get(w), problem,
 					this.severAndIdList.get(w));
 			rList.add(y);
 		}
-		for (RemotePoolEvaluate r:rList) {
+
+		for (RemotePoolEvaluate r : rList) {
 			r.start();
-			
+
 		}
-		
-		
-		
-		
+
 		try {
-			for (RemotePoolEvaluate r:rList) {
+			for (RemotePoolEvaluate r : rList) {
 				r.join();
-				
+
 			}
 		} catch (Exception e) {
 			// TODO: handle exception
 		}
-		
-		for (RemotePoolEvaluate r:rList) {
-			this.AuxiliarCountParallelEvaluation+=r.getAuxiliarCountParallelEvaluation();
-			
+
+		for (RemotePoolEvaluate r : rList) {
+			this.AuxiliarCountParallelEvaluation += r.getAuxiliarCountParallelEvaluation();
+
 		}
+
+		for (RemotePoolEvaluate r : rList) {
+			for (SeverAndId s : this.severAndIdList) {
+				if (r.getParallelEvaluateId() == s.getId()) {
+					s.setExecutionTime(r.getExecutionTime());
+					s.setLastEvaluateSize(r.getLastEvaluateSize());
+				}
+			}
+
+		}
+
 		return solutionList;
 	}
 
+	public void consultVelocity() {
+		List<Double> velocity = new ArrayList<>();
+		double totalDurationTime = 0;
+		// descobrir o tempo totatl da ultima avaliação entre os servidore
+		for (SeverAndId s : this.severAndIdList) {
+			totalDurationTime += s.getExecutionTime();
+		}
+		// criando o tempo desejavel para cada um do servidores
+		double timeSlice = totalDurationTime / this.severAndIdList.size();
+		// calculando a velocidade e a fatia de soluções 
+		//que sera entregue para cada um dos servidores
+		int totalSlice=0;
+		for (SeverAndId s : this.severAndIdList) {
+			if (s.getExecutionTime() < 1) {
+				s.setExecutionTime(1);
+			}
+			s.setVelocity((double) s.getLastEvaluateSize() / s.getExecutionTime());
+			if (s.getVelocity() > 10000000000.00) {
+				System.out.println(s.getVelocity());
+			}
+			s.setSlice((int) (s.getVelocity() * timeSlice));
+			totalSlice += s.getSlice();
+		}
+		int index=0;
+		while((totalSlice>this.solutionList.size())) {
+			if (this.severAndIdList.get(index).getSlice()>1) {
+				this.severAndIdList.get(index).setSlice(this.severAndIdList.get(index).getSlice()-1);
+			}else {
+				this.severAndIdList.get(index).setSlice(1);
+			}
+			
+			index+=1;
+			if (index==this.severAndIdList.size()) {
+				index=0;
+			}
+			totalSlice=0;
+			for (SeverAndId s : this.severAndIdList) {
+				totalSlice=totalSlice+=s.getSlice();
+			}
+		}
+		
+		for (SeverAndId s : this.severAndIdList) {
+			if(s.getSlice()<1) {
+				System.out.println(s.getSlice());
+			}
+		}
+		
+		Collections.sort(this.severAndIdList);
+	}
 
 	@Override
 	public void shutdown() {
@@ -121,7 +202,6 @@ public class ParallelSolutionListEvaluate<S> extends Thread implements SolutionL
 	public int getAuxiliarCountParallelEvaluation() {
 		return AuxiliarCountParallelEvaluation;
 	}
-	
 
 }
 
@@ -149,19 +229,22 @@ class RemotePoolEvaluate<S> extends Thread {
 	private String url;
 	private Integer serverPort;
 	private int AuxiliarCountParallelEvaluation;
+	private long executionTime;
+	private int lastEvaluateSize;
 
-	public RemotePoolEvaluate(List<S> remotEvaluate, Problem<S> problem, SeverAndId idAndUrl ) {
+	public RemotePoolEvaluate(List<S> remotEvaluate, Problem<S> problem, SeverAndId idAndUrl) {
 
 		this.remotEvaluate = remotEvaluate;
 		this.problem = problem;
 		this.ParallelEvaluateId = idAndUrl.getId();
-		url=idAndUrl.getUrl().get(0);
-		serverPort=Integer.parseInt(idAndUrl.getUrl().get(1));
-		this.AuxiliarCountParallelEvaluation=0;
+		url = idAndUrl.getUrl().get(0);
+		serverPort = Integer.parseInt(idAndUrl.getUrl().get(1));
+		this.AuxiliarCountParallelEvaluation = 0;
 	}
 
 	@Override
 	public void run() {
+		Instant start = Instant.now();
 		Socket soc = null;
 		ObjectMapper mapper = new ObjectMapper();
 		String textOut = null;
@@ -214,7 +297,10 @@ class RemotePoolEvaluate<S> extends Thread {
 				}
 				i += 1;
 			}
-			this.AuxiliarCountParallelEvaluation=pReturned.size();
+			this.AuxiliarCountParallelEvaluation = pReturned.size();
+			this.lastEvaluateSize = pReturned.size();
+			Instant finish = Instant.now();
+			this.executionTime = Duration.between(start, finish).toSeconds();
 
 		} catch (UnknownHostException e) {
 			System.out.println("Socket:" + e.getMessage());
@@ -231,11 +317,22 @@ class RemotePoolEvaluate<S> extends Thread {
 				}
 		}
 
-		
-
 	}
 
 	public int getAuxiliarCountParallelEvaluation() {
 		return AuxiliarCountParallelEvaluation;
 	}
+
+	public long getExecutionTime() {
+		return executionTime;
+	}
+
+	public UUID getParallelEvaluateId() {
+		return ParallelEvaluateId;
+	}
+
+	public int getLastEvaluateSize() {
+		return lastEvaluateSize;
+	}
+
 }
