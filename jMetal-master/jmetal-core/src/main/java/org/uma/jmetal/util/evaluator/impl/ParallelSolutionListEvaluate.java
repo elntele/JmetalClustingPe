@@ -33,8 +33,9 @@ public class ParallelSolutionListEvaluate<S> extends Thread implements SolutionL
 	private List<List<S>> remotEvaluate;
 	private List<S> solutionList;
 	private Problem<S> problem;
-//	private List<UUID> ParallelEvaluateIdList;
 	private List <SeverAndId> severAndIdList;
+	private int AuxiliarCountParallelEvaluation;
+	
 
 	public ParallelSolutionListEvaluate(List <SeverAndId> severAndIdList) {
 		super();
@@ -90,6 +91,10 @@ public class ParallelSolutionListEvaluate<S> extends Thread implements SolutionL
 			r.start();
 			
 		}
+		
+		
+		
+		
 		try {
 			for (RemotePoolEvaluate r:rList) {
 				r.join();
@@ -97,6 +102,11 @@ public class ParallelSolutionListEvaluate<S> extends Thread implements SolutionL
 			}
 		} catch (Exception e) {
 			// TODO: handle exception
+		}
+		
+		for (RemotePoolEvaluate r:rList) {
+			this.AuxiliarCountParallelEvaluation+=r.getAuxiliarCountParallelEvaluation();
+			
 		}
 		return solutionList;
 	}
@@ -107,6 +117,11 @@ public class ParallelSolutionListEvaluate<S> extends Thread implements SolutionL
 		// TODO Auto-generated method stub
 
 	}
+
+	public int getAuxiliarCountParallelEvaluation() {
+		return AuxiliarCountParallelEvaluation;
+	}
+	
 
 }
 
@@ -133,6 +148,7 @@ class RemotePoolEvaluate<S> extends Thread {
 	private UUID ParallelEvaluateId;
 	private String url;
 	private Integer serverPort;
+	private int AuxiliarCountParallelEvaluation;
 
 	public RemotePoolEvaluate(List<S> remotEvaluate, Problem<S> problem, SeverAndId idAndUrl ) {
 
@@ -141,7 +157,7 @@ class RemotePoolEvaluate<S> extends Thread {
 		this.ParallelEvaluateId = idAndUrl.getId();
 		url=idAndUrl.getUrl().get(0);
 		serverPort=Integer.parseInt(idAndUrl.getUrl().get(1));
-		
+		this.AuxiliarCountParallelEvaluation=0;
 	}
 
 	@Override
@@ -198,6 +214,7 @@ class RemotePoolEvaluate<S> extends Thread {
 				}
 				i += 1;
 			}
+			this.AuxiliarCountParallelEvaluation=pReturned.size();
 
 		} catch (UnknownHostException e) {
 			System.out.println("Socket:" + e.getMessage());
@@ -214,7 +231,11 @@ class RemotePoolEvaluate<S> extends Thread {
 				}
 		}
 
-		// return population;
+		
 
+	}
+
+	public int getAuxiliarCountParallelEvaluation() {
+		return AuxiliarCountParallelEvaluation;
 	}
 }

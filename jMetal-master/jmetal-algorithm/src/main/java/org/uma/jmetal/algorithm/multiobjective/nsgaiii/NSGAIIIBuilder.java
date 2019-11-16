@@ -39,12 +39,12 @@ public class NSGAIIIBuilder<S extends Solution<?>> implements AlgorithmBuilder<N
 	
 	
 	/** Builder constructor */
-	public NSGAIIIBuilder(Problem<S> problem, GmlData gml, List<Pattern>[] clustters, Properties prop, List <SeverAndId> severAndIdList) {
+	public NSGAIIIBuilder(Problem<S> problem, GmlData gml, List<Pattern>[] clustters, Properties prop, ParallelSolutionListEvaluate parallelEvaluator) {
 		this.problem = problem;
 		maxIterations = 250;
 		populationSize = 100;
 		evaluator = new SequentialSolutionListEvaluator<S>();
-		parallelEvaluator = new ParallelSolutionListEvaluate<S>(severAndIdList);
+		this.parallelEvaluator = parallelEvaluator;
 		this.gml = gml;
 		this.clustters = clustters;
 		this.prop=prop;
