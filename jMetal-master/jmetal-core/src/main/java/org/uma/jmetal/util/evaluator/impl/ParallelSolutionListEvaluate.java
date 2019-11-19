@@ -97,24 +97,6 @@ public class ParallelSolutionListEvaluate<S> extends Thread implements SolutionL
 
 			}
 			severAndIdList.addAll(holdNullThere);
-			/*
-			 * for (S s : solutionList) { int remotindiceCoparation=remotIndice+1;
-			 * 
-			 * 
-			 * if (this.severAndIdList.get(SeverIdIndice).isStatusOnLine()) {
-			 * remotEvaluate.get(remotIndice).add(s); remotIndice+=1;
-			 * 
-			 * }else if (remotindiceCoparation<remotEvaluate.size()) { remotIndice+=1;
-			 * remotEvaluate.get(remotIndice).add(s); remotIndice+=1;
-			 * 
-			 * }else { remotIndice = 0; remotEvaluate.get(remotIndice).add(s);
-			 * remotIndice+=1; }
-			 * 
-			 * SeverIdIndice += 1; if (SeverIdIndice == numberOfServers) { SeverIdIndice =
-			 * 0; } if (remotIndice==remotEvaluate.size()) { remotIndice=0; }
-			 * 
-			 * }
-			 */
 			this.isStartEvaluate = false;
 		} else {// ditribuindo solucion de acordo com a velocidade do servidor
 			consultVelocity();
@@ -152,12 +134,15 @@ public class ParallelSolutionListEvaluate<S> extends Thread implements SolutionL
 			}
 
 		}
+		
+		for (int namThSliceRemEvaluate=0;namThSliceRemEvaluate<this.remotEvaluate.size();namThSliceRemEvaluate++) {
+			rList.get(namThSliceRemEvaluate).setName(Integer.toString(namThSliceRemEvaluate));
+		}
 
 		for (RemotePoolEvaluate r : rList) {
 			r.start();
 
 		}
-
 		try {
 			for (RemotePoolEvaluate r : rList) {
 				r.join();
@@ -168,7 +153,10 @@ public class ParallelSolutionListEvaluate<S> extends Thread implements SolutionL
 		}
 
 		for (RemotePoolEvaluate r : rList) {
-			this.AuxiliarCountParallelEvaluation += r.getAuxiliarCountParallelEvaluation();
+			if(r.getSeverAnId().isStatusOnLine()) {
+				this.AuxiliarCountParallelEvaluation += r.getAuxiliarCountParallelEvaluation();
+			}
+			
 
 		}
 
@@ -181,6 +169,15 @@ public class ParallelSolutionListEvaluate<S> extends Thread implements SolutionL
 			}
 
 		}
+		
+		for (RemotePoolEvaluate r : rList) {
+			if(r.getSeverAnId().isStatusOnLine()) {
+				this.AuxiliarCountParallelEvaluation += r.getAuxiliarCountParallelEvaluation();
+			}
+			
+
+		}
+	
 
 		return solutionList;
 	}
@@ -380,7 +377,11 @@ class RemotePoolEvaluate<S> extends Thread {
 		} catch (EOFException e) {
 			System.out.println("EOF:" + e.getMessage());
 		} catch (IOException e) {
-			System.out.println("readline:" + e.getMessage());
+			System.out.println("readline:" + e.getMessage() + " in sever " + adress + " was not possible"
+					+ ": it will be marked as not online");
+			this.severAnId.setStatusOnLine(false);
+			LocalPoolEvaluate l = new LocalPoolEvaluate(this.remotEvaluate, this.problem);
+			l.start();
 		} finally {
 			if (soc != null)
 				try {
@@ -407,5 +408,14 @@ class RemotePoolEvaluate<S> extends Thread {
 	public int getLastEvaluateSize() {
 		return lastEvaluateSize;
 	}
+
+	public SeverAndId getSeverAnId() {
+		return severAnId;
+	}
+
+	public List<S> getRemotEvaluate() {
+		return remotEvaluate;
+	}	
+	
 
 }
