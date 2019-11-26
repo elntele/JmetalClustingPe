@@ -581,7 +581,9 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 			Double[] arrayObjetiveValueUpper = new Double[this.problem.getNumberOfObjectives()];
 
 			for (int i = 0; i < arrayObjetiveValueLower.length; i++) {
-				arrayObjetiveValueLower[i] = Double.MIN_VALUE;
+				double a=Double.MAX_VALUE;
+				a=a*(-1);
+				arrayObjetiveValueLower[i] =a;
 				arrayObjetiveValueUpper[i] = Double.MAX_VALUE;
 			}
 
@@ -714,9 +716,13 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 			Double[] arrayObjetiveValueUpper = new Double[this.problem.getNumberOfObjectives()];
 
 			for (int i = 0; i < arrayObjetiveValueLower.length; i++) {
-				arrayObjetiveValueLower[i] = Double.MIN_VALUE;
+				double a=Double.MAX_VALUE;
+				a=a*(-1);
+				arrayObjetiveValueLower[i] =a;
 				arrayObjetiveValueUpper[i] = Double.MAX_VALUE;
 			}
+			//se liga, estou mandando o arrayObjetiveValueUpper para o arrayIndiceLower
+			// e o arrayObjetiveValueLower arrayIndiceUpper, ou seja, cruzado.
 
 			Integer[] arrayIndiceLower = takeNLowerSolutiox(arrayObjetiveValueUpper.clone(), population);
 			Integer[] arrayIndiceUpper = takeNUpperSolutiox(arrayObjetiveValueLower.clone(), population,
@@ -937,7 +943,9 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 			Double[] arrayObjetiveValueUpper = new Double[this.problem.getNumberOfObjectives()];
 
 			for (int i = 0; i < arrayObjetiveValueLower.length; i++) {
-				arrayObjetiveValueLower[i] = Double.MIN_VALUE;
+				double a=Double.MAX_VALUE;
+				a=a*(-1);
+				arrayObjetiveValueLower[i] =a;
 				arrayObjetiveValueUpper[i] = Double.MAX_VALUE;
 			}
 
