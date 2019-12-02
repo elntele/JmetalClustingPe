@@ -11,6 +11,7 @@ public class SeverAndId implements Comparable  {
 	private double velocity;
 	private int lastEvaluateSize;
 	private boolean StatusOnLine;
+	private String createProblema;
 	
 	public long getExecutionTime() {
 		return executionTime;
@@ -63,6 +64,14 @@ public class SeverAndId implements Comparable  {
 	}
 	public void setStatusOnLine(boolean statusOnLine) {
 		StatusOnLine = statusOnLine;
+	}
+	
+	
+	public String getCreateProblema() {
+		return createProblema;
+	}
+	public void setCreateProblema(String createProblema) {
+		this.createProblema = createProblema;
 	}
 	/**
 	 * metodo inserido para ordenação de listas de objetos severAndId

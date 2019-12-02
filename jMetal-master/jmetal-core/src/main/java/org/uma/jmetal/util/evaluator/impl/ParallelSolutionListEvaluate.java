@@ -26,6 +26,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import br.cns.metrics.TotalDistance;
+import br.cns.model.GmlData;
 
 /**
  * 
@@ -41,6 +42,7 @@ public class ParallelSolutionListEvaluate<S> extends Thread implements SolutionL
 	private List<SeverAndId> severAndIdList;
 	private int AuxiliarCountParallelEvaluation;
 	private boolean isStartEvaluate = true;
+	private int calsRemoteEvatuatorTimes = 0;
 
 	public ParallelSolutionListEvaluate(List<SeverAndId> severAndIdList) {
 		super();
@@ -60,8 +62,12 @@ public class ParallelSolutionListEvaluate<S> extends Thread implements SolutionL
 		List<S> localEvaluate = new ArrayList<>();
 		// lista de lista remotas, tem o tamanho da lista de id de servidores
 		List<List<S>> remotEvaluate = new ArrayList<>();
+		if (this.calsRemoteEvatuatorTimes % 1 == 0 && calsRemoteEvatuatorTimes != 0) {
+			this.consultServerOnline();
+		}
+		this.calsRemoteEvatuatorTimes += 1;
+
 		// numero de servidores disponivel
-//		int numberOfServers = this.ParallelEvaluateIdList.size();
 		int numberOfServers = this.severAndIdList.size();
 		// preparando x listas de solution onde x= numero de servidores
 		for (int i = 0; i < numberOfServers; i++) {
@@ -134,8 +140,9 @@ public class ParallelSolutionListEvaluate<S> extends Thread implements SolutionL
 			}
 
 		}
-		
-		for (int namThSliceRemEvaluate=0;namThSliceRemEvaluate<this.remotEvaluate.size();namThSliceRemEvaluate++) {
+
+		for (int namThSliceRemEvaluate = 0; namThSliceRemEvaluate < this.remotEvaluate
+				.size(); namThSliceRemEvaluate++) {
 			rList.get(namThSliceRemEvaluate).setName(Integer.toString(namThSliceRemEvaluate));
 		}
 
@@ -153,10 +160,9 @@ public class ParallelSolutionListEvaluate<S> extends Thread implements SolutionL
 		}
 
 		for (RemotePoolEvaluate r : rList) {
-			if(r.getSeverAnId().isStatusOnLine()) {
+			if (r.getSeverAnId().isStatusOnLine()) {
 				this.AuxiliarCountParallelEvaluation += r.getAuxiliarCountParallelEvaluation();
 			}
-			
 
 		}
 
@@ -169,15 +175,13 @@ public class ParallelSolutionListEvaluate<S> extends Thread implements SolutionL
 			}
 
 		}
-		
+
 		for (RemotePoolEvaluate r : rList) {
-			if(r.getSeverAnId().isStatusOnLine()) {
+			if (r.getSeverAnId().isStatusOnLine()) {
 				this.AuxiliarCountParallelEvaluation += r.getAuxiliarCountParallelEvaluation();
 			}
-			
 
 		}
-	
 
 		return solutionList;
 	}
@@ -261,6 +265,148 @@ public class ParallelSolutionListEvaluate<S> extends Thread implements SolutionL
 		Collections.sort(this.severAndIdList);
 	}
 
+	public void consultServerOnline() {
+		ObjectMapper mapper = new ObjectMapper();
+		for (SeverAndId s : this.severAndIdList) {
+
+			String adress = s.getUrl().get(0);
+			Socket soc = null;
+			boolean answer = false;
+			boolean isProblemInstaceate = false;
+
+			try {
+				int serverPort = Integer.parseInt(s.getUrl().get(1));
+				soc = new Socket(adress, serverPort);
+				DataInputStream in = new DataInputStream(soc.getInputStream());
+				DataOutputStream out = new DataOutputStream(soc.getOutputStream());
+				List<String> l = new ArrayList<>();
+				String textOut = "AreYouOnline";
+				l.add(textOut);
+				textOut = mapper.writeValueAsString(l);
+				byte[] b = textOut.getBytes(StandardCharsets.UTF_8);
+				out.writeInt(b.length); // write length of the message
+				out.write(b);
+				// retorno
+				int length = in.readInt();
+				String data = null;
+				if (length > 0) {
+					byte[] message = new byte[length];
+					in.readFully(message, 0, message.length); // read the message
+					data = new String(message, StandardCharsets.US_ASCII);
+					mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+					// se houve resposta ele ta on line
+					s.setStatusOnLine(true);
+					System.out.println("servidor esta online");
+
+				}
+				answer = mapper.readValue(data, boolean.class);
+
+			} catch (UnknownHostException e) {
+				System.out.println("Socket:" + e.getMessage());
+			} catch (EOFException e) {
+				System.out.println("EOF:" + e.getMessage());
+			} catch (IOException e) {
+				System.out.println("readline:" + e.getMessage() + " in sever " + adress + " was not possible"
+						+ ": it will be marked as not online");
+				s.setStatusOnLine(false);
+			} finally {
+				if (soc != null)
+					try {
+						soc.close();
+					} catch (IOException e) {
+						System.out.println("close:" + e.getMessage());
+					}
+			}
+
+			if (answer) {
+				try {
+					int serverPort = Integer.parseInt(s.getUrl().get(1));
+					soc = new Socket(adress, serverPort);
+					DataInputStream in = new DataInputStream(soc.getInputStream());
+					DataOutputStream out = new DataOutputStream(soc.getOutputStream());
+					List<String> l = new ArrayList<>();
+					String textOut = "DoYouHaveThisIdProblem";
+					l.add(textOut);
+					l.add(s.getId().toString());
+					textOut = mapper.writeValueAsString(l);
+					byte[] b = textOut.getBytes(StandardCharsets.UTF_8);
+					out.writeInt(b.length); // write length of the message
+					out.write(b);
+					// retorno
+					int length = in.readInt();
+					String data = null;
+					if (length > 0) {
+						byte[] message = new byte[length];
+						in.readFully(message, 0, message.length); // read the message
+						data = new String(message, StandardCharsets.US_ASCII);
+						mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+						isProblemInstaceate = mapper.readValue(data, boolean.class);
+						if (isProblemInstaceate) {
+							System.out.println("o problema ainda esta instanciado");
+						} else {
+							System.out.println("não existe mais instância do problema sera criado uma outra");
+						}
+
+					}
+
+				} catch (UnknownHostException e) {
+					System.out.println("Socket:" + e.getMessage());
+				} catch (EOFException e) {
+					System.out.println("EOF:" + e.getMessage());
+				} catch (IOException e) {
+					System.out.println("readline:" + e.getMessage() + " in sever " + adress + " was not possible"
+							+ ": it will be marked as not online");
+					s.setStatusOnLine(false);
+				} finally {
+					if (soc != null)
+						try {
+							soc.close();
+						} catch (IOException e) {
+							System.out.println("close:" + e.getMessage());
+						}
+				}
+
+			}
+
+			if (!isProblemInstaceate && answer) {
+				try {
+					int serverPort = Integer.parseInt(s.getUrl().get(1));
+					soc = new Socket(adress, serverPort);
+					DataInputStream in = new DataInputStream(soc.getInputStream());
+					DataOutputStream out = new DataOutputStream(soc.getOutputStream());
+					// int length = in.readInt();
+					String textOut = s.getCreateProblema();
+					byte[] b = textOut.getBytes(StandardCharsets.UTF_8);
+					out.writeInt(b.length); // write length of the message
+					out.write(b);
+					String data = in.readUTF();
+					// retorno
+					UUID id = UUID.fromString(data);
+					s.setId(id);
+					s.setStatusOnLine(true);
+					System.out.println("foi instanciado um novo problema");
+
+				} catch (UnknownHostException e) {
+					System.out.println("Socket:" + e.getMessage());
+				} catch (EOFException e) {
+					System.out.println("EOF:" + e.getMessage());
+				} catch (IOException e) {
+					System.out.println("readline:" + e.getMessage() + " in sever " + adress + " was not possible"
+							+ ": it will be marked as not online");
+					s.setStatusOnLine(false);
+				} finally {
+					if (soc != null)
+						try {
+							soc.close();
+						} catch (IOException e) {
+							System.out.println("close:" + e.getMessage());
+						}
+				}
+
+			}
+		}
+	}
+
 	@Override
 	public void shutdown() {
 		// TODO Auto-generated method stub
@@ -321,6 +467,7 @@ class RemotePoolEvaluate<S> extends Thread {
 		try {
 			textOut = mapper.writeValueAsString(remotEvaluate);
 			List<String> l = new ArrayList<>();
+			l.add("EvaluateSolution");
 			l.add((this.ParallelEvaluateId).toString());
 			l.add(textOut);
 			textOut = mapper.writeValueAsString(l);
@@ -415,7 +562,6 @@ class RemotePoolEvaluate<S> extends Thread {
 
 	public List<S> getRemotEvaluate() {
 		return remotEvaluate;
-	}	
-	
+	}
 
 }
