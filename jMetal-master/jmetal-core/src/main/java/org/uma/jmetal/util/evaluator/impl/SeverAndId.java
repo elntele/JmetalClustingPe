@@ -1,6 +1,10 @@
 package org.uma.jmetal.util.evaluator.impl;
 
 import java.util.List;
+/**
+ * classe criada por jorge candeias para gradar informações sovbre servidores
+ * distribuidos de função de fitness
+ */
 import java.util.UUID;
 
 public class SeverAndId implements Comparable  {

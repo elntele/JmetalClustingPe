@@ -48,6 +48,9 @@ public class ParallelSolutionListEvaluate<S> extends Thread implements SolutionL
 		super();
 		this.severAndIdList = severAndIdList;
 	}
+	
+	
+	
 
 	/**
 	 * java passa parâmetro por referência, logo, ao colocar as solutions de
@@ -62,7 +65,7 @@ public class ParallelSolutionListEvaluate<S> extends Thread implements SolutionL
 		List<S> localEvaluate = new ArrayList<>();
 		// lista de lista remotas, tem o tamanho da lista de id de servidores
 		List<List<S>> remotEvaluate = new ArrayList<>();
-		if (this.calsRemoteEvatuatorTimes % 30 == 0 && calsRemoteEvatuatorTimes != 0) {
+		if (this.calsRemoteEvatuatorTimes % 50 == 0 && calsRemoteEvatuatorTimes != 0) {
 			this.consultServerOnline();
 		}
 		this.calsRemoteEvatuatorTimes += 1;
