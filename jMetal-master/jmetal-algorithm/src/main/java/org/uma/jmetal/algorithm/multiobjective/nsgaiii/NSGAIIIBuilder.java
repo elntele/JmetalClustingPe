@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
 
+import org.uma.jmetal.gmlNetwaork.PatternToGml;
 import org.uma.jmetal.operator.CrossoverOperator;
 import org.uma.jmetal.operator.MutationOperator;
 import org.uma.jmetal.operator.SelectionOperator;
@@ -35,6 +36,7 @@ public class NSGAIIIBuilder<S extends Solution<?>> implements AlgorithmBuilder<N
 	List <SeverAndId> severAndIdList;
 	private SolutionListEvaluator<S> evaluator;
 	private SolutionListEvaluator<S> parallelEvaluator;
+	private PatternToGml ptg;
 
 	
 	
@@ -49,9 +51,19 @@ public class NSGAIIIBuilder<S extends Solution<?>> implements AlgorithmBuilder<N
 		this.clustters = clustters;
 		this.prop=prop;
 		severAndIdList=severAndIdList;
+		this.ptg = new PatternToGml(gml);
 	}
 	
 	
+
+
+
+
+	public PatternToGml getPtg() {
+		return ptg;
+	}
+
+
 
 
 

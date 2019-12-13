@@ -3,7 +3,10 @@ package org.uma.jmetal.algorithm.multiobjective.nsgaiii;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.EOFException;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
@@ -22,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 import org.uma.jmetal.algorithm.impl.AbstractGeneticAlgorithm;
 import org.uma.jmetal.algorithm.multiobjective.nsgaiii.util.EnvironmentalSelection;
 import org.uma.jmetal.algorithm.multiobjective.nsgaiii.util.ReferencePoint;
+import org.uma.jmetal.gmlNetwaork.PatternToGml;
 import org.uma.jmetal.solution.IntegerSolution;
 import org.uma.jmetal.solution.Solution;
 import org.uma.jmetal.solution.impl.DefaultIntegerSolution;
@@ -65,6 +69,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	protected List<Pattern>[] clustters;
 	private int LocalSeachFoundNoDominated = 0;
 	private UUID ParallelEvaluateId;
+	private PatternToGml ptg;
 
 	/** Constructor */
 	public NSGAIII(NSGAIIIBuilder<S> builder) { // can be created from the
@@ -80,7 +85,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 		selectionOperator = builder.getSelectionOperator();
 		parallelEvaluator = builder.getParallelEvaluator();
 		evaluator = builder.getEvaluator();
-
+		ptg=builder.getPtg();
 		prop = builder.getProp();
 
 		/// NSGAIII
@@ -1310,6 +1315,27 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 				.setVarFileOutputContext(new DefaultFileOutputContext(path + "/" + "VAR" + this.iterations + ".tsv"))
 				.setFunFileOutputContext(new DefaultFileOutputContext(path + "/" + "FUN" + this.iterations + ".tsv"))
 				.print();
+		//parte nova
+		int w = 1;
+		
+		
+		new File(prop.getProperty("local") + prop.getProperty("algName") + "/" + prop.getProperty("modo") + "/"
+				+ prop.getProperty("execucao") + "/ResultadoGML"+this.iterations+"/").mkdir();
+		
+		String pathTogml = prop.getProperty("local") + prop.getProperty("algName") + "/" + prop.getProperty("modo")
+		+ "/" + prop.getProperty("execucao");
+		for (Solution<?> i : population) {
+			//IntegerSolution
+			String s = pathTogml + "/ResultadoGML"+this.iterations+"/" + Integer.toString(w) + ".gml";
+			this.ptg.saveGmlFromSolution( s, (IntegerSolution)i);
+			List<Integer> centros = new ArrayList<>();
+			for (int j = 0; j < i.getLineColumn().length; j++) {
+				centros.add(i.getLineColumn()[j].getId());
+			}
+			w += 1;
+
+		}
+		//***********************
 
 		JMetalLogger.logger.info("Random Seed: " + JMetalRandom.getInstance().getSeed());
 		JMetalLogger.logger.info("Objectives values have been written to file FUN.tsv");
