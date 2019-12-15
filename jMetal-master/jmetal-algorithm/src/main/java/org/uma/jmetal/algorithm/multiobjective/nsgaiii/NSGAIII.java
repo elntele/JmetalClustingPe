@@ -109,7 +109,11 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 
 	@Override
 	protected void initProgress() {
-		iterations = 1;
+		if (this.prop.get("startFromAstopedIteration").equals("y")) {
+			iterations=Integer.parseInt(this.prop.getProperty("interationStopedInExecution"));
+		}else{
+			iterations = 1;
+			}
 	}
 
 	@Override
@@ -133,7 +137,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 //	@Override
 //	protected List<S> evaluatePopulation(List<S> population) {
 //		population = evaluator.evaluate(population, getProblem());
-//		String path="C:\\Users\\elnte\\OneDrive\\Área de Trabalho\\fixedSolution.tsv";
+//		String path="C:\\Users\\elnte\\OneDrive\\Área de Trabalho\\fixedSolution18Pops.tsv";
 //		FileWriter arq;
 //		try {
 //			arq = new FileWriter(path);

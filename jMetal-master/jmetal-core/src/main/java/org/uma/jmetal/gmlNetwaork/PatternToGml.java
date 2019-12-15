@@ -15,22 +15,25 @@ import br.cns.model.GmlEdge;
 import br.cns.model.GmlNode;
 import br.cns.persistence.GmlDao;
 import cbic15.Pattern;
+
 /**
- * classe criada para transformação do padrão da solution em redes para trabalhar 
- * com o simulador simtom. estar classe era do projeto clusterPe, foi trazida
- * para o jmetamclusterPe por causa da necessidade de escrever as redes em 
- * formato .gml a toda vez que se escrevesse as saídas do alg,  tipo a cada
- * 20 iterações, como o clusterPe tem depenência com o jmetal, ele não vai perder
- * a ultilização da classe.
+ * classe criada para transformação do padrão da solution em redes para
+ * trabalhar com o simulador simtom. estar classe era do projeto clusterPe, foi
+ * trazida para o jmetamclusterPe por causa da necessidade de escrever as redes
+ * em formato .gml a toda vez que se escrevesse as saídas do alg, tipo a cada 20
+ * iterações, como o clusterPe tem depenência com o jmetal, ele não vai perder a
+ * ultilização da classe.
+ * 
  * @author jorge candeias
  *
  */
 
-public class PatternToGml implements Serializable{
+public class PatternToGml implements Serializable {
 	private GmlData gml;
 	private Map mapNode;
+
 	@JsonCreator
-	public PatternToGml(@JsonProperty("gml")GmlData gml) {
+	public PatternToGml(@JsonProperty("gml") GmlData gml) {
 		Map<Integer, GmlNode> map = new HashMap<Integer, GmlNode>();
 		this.gml = gml;
 		for (GmlNode G : gml.getNodes()) {
@@ -42,12 +45,19 @@ public class PatternToGml implements Serializable{
 	public List<GmlNode> patternGml(Pattern[] ArrayPatterns) {
 		List<GmlNode> listNode = new ArrayList<>();
 		for (int i = 0; i < ArrayPatterns.length; i++) {
-			Integer id=ArrayPatterns[i].getId();
+			Integer id = ArrayPatterns[i].getId();
 			listNode.add((GmlNode) this.mapNode.get(ArrayPatterns[i].getId()));
 		}
 		return listNode;
 	}
-
+/**
+ * o objetivo desse metodo eh analizar o array de bits da solution e 
+ * transformar no formato edge do arquivo gml, a bem da verdade em uma 
+ * lista de objetos GmlEdge
+ * @param arrayPatterns
+ * @param vars
+ * @return objeto BooleanAndEdge
+ */
 	public BooleanAndEdge makelink(Pattern[] arrayPatterns, Integer[] vars) {
 		int VarIndex = 0;
 		boolean have = false;
@@ -91,20 +101,9 @@ public class PatternToGml implements Serializable{
 		GmlData gmlLocal = new GmlData();
 		gmlLocal.setNodes(patternGml(arrayPatterns));
 		BooleanAndEdge B = makelink(arrayPatterns, vars);
-		// if (B.isHave()){
 		gmlLocal.setEdges(B.getEdges());
-		// }
-
 		gmlLocal.createComplexNetwork();
-
-		// try {
 		gmlLocal = G.loadGmlDataFromContent(G.createFileContent(gmlLocal));
-		// } catch (StringIndexOutOfBoundsException e) {
-		// // TODO Auto-generated catch block
-		// System.out.println("aqui");
-		// e.printStackTrace();
-		// }
-
 		return gmlLocal;
 	}
 
@@ -118,17 +117,18 @@ public class PatternToGml implements Serializable{
 		gmlLocal.setEdges(B.getEdges());
 		gmlLocal.createComplexNetwork();
 		G.save(gmlLocal, "src/GmlevaluatingMax.gml");
-		//G.save(gmlLocal, "C:/Users/jorge/workspace/ClusterPe/src/GmlevaluatingMax.gml");
+		// G.save(gmlLocal,
+		// "C:/Users/jorge/workspace/ClusterPe/src/GmlevaluatingMax.gml");
 
 	}
-	
-	public void saveGmlFromSolution(String patch, IntegerSolution solution ) {
-		Pattern[] arrayPatterns=solution.getLineColumn();
+
+	public void saveGmlFromSolution(String patch, IntegerSolution solution) {
+		Pattern[] arrayPatterns = solution.getLineColumn();
 		Integer[] vars = new Integer[solution.getNumberOfVariables()];
 		for (int i = 0; i < vars.length; i++) {
 			vars[i] = solution.getVariableValue(i);
 		}
-		Map<String, String> informations =new HashMap();
+		Map<String, String> informations = new HashMap();
 		informations.put("Country", "Brazil");
 		informations.put("PB", Double.toString(solution.getObjective(0)));
 		informations.put("Capex", Double.toString(solution.getObjective(1)));
@@ -160,15 +160,13 @@ public class PatternToGml implements Serializable{
 	public void setMapNode(Map mapNode) {
 		this.mapNode = mapNode;
 	}
-	
+
 	/**
 	 * gerando os gts e sets
-	
+	 * 
 	 * 
 	 */
-	
-	
-	
-	//***************************************
+
+	// ***************************************
 
 }
