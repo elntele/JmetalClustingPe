@@ -490,32 +490,31 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	public Integer[] takeNLowerSolutiox(Double[] arrayObjetiveValueLower, List<S> population) {
 		Integer[] arrayIndice = new Integer[this.problem.getNumberOfObjectives()];
 		for (int i = 0; i < population.size(); i++) {
-			if (Double.parseDouble(population.get(i).getVariableValueString(0)) < arrayObjetiveValueLower[0]) {
-				arrayObjetiveValueLower[0] = Double.parseDouble(population.get(i).getVariableValueString(0));
+			if (population.get(i).getObjective(0) < arrayObjetiveValueLower[0]) {
+				arrayObjetiveValueLower[0] = population.get(i).getObjective(0);
 				arrayIndice[0] = i;
 			}
 		}
-
 		for (int i = 0; i < population.size(); i++) {
-			if ((Double.parseDouble(population.get(i).getVariableValueString(1)) < arrayObjetiveValueLower[1])
+			if ((population.get(i).getObjective(1) < arrayObjetiveValueLower[1])
 					&& (arrayIndice[0] != i)) {
-				arrayObjetiveValueLower[1] = Double.parseDouble(population.get(i).getVariableValueString(1));
+				arrayObjetiveValueLower[1] = population.get(i).getObjective(1);
 				arrayIndice[1] = i;
 			}
 		}
 
 		for (int i = 0; i < population.size(); i++) {
-			if ((Double.parseDouble(population.get(i).getVariableValueString(2)) < arrayObjetiveValueLower[2])
+			if ((population.get(i).getObjective(2) < arrayObjetiveValueLower[2])
 					&& (arrayIndice[0] != i) && (arrayIndice[1] != i)) {
-				arrayObjetiveValueLower[2] = Double.parseDouble(population.get(i).getVariableValueString(2));
+				arrayObjetiveValueLower[2] =population.get(i).getObjective(2);
 				arrayIndice[2] = i;
 			}
 		}
 
 		for (int i = 0; i < population.size(); i++) {
-			if ((Double.parseDouble(population.get(i).getVariableValueString(3)) < arrayObjetiveValueLower[3]
-					&& (arrayIndice[0] != i) && (arrayIndice[1] != i) && (arrayIndice[2] != i))) {
-				arrayObjetiveValueLower[3] = Double.parseDouble(population.get(i).getVariableValueString(3));
+			if ((population.get(i).getObjective(3) < arrayObjetiveValueLower[3])
+					&& (arrayIndice[0] != i) && (arrayIndice[1] != i) && (arrayIndice[2] != i)) {
+				arrayObjetiveValueLower[3] = population.get(i).getObjective(3);
 				arrayIndice[3] = i;
 			}
 		}
@@ -538,37 +537,37 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	public Integer[] takeNUpperSolutiox(Double[] arrayObjetiveValueUpper, List<S> population, Integer[] Lowers) {
 		Integer[] arrayIndiceUpper = new Integer[this.problem.getNumberOfObjectives()];
 		for (int i = 0; i < population.size(); i++) {
-			if (Double.parseDouble(population.get(i).getVariableValueString(0)) > arrayObjetiveValueUpper[0]
-					&& (i != Lowers[0] && (i != Lowers[1]) && (i != Lowers[2]) && (i != Lowers[3]))) {
-				arrayObjetiveValueUpper[0] = Double.parseDouble(population.get(i).getVariableValueString(0));
+			if ((population.get(i).getObjective(0) > arrayObjetiveValueUpper[0])
+					&& (i != Lowers[0]) && (i != Lowers[1]) && (i != Lowers[2]) && (i != Lowers[3])) {
+				arrayObjetiveValueUpper[0] =population.get(i).getObjective(0);
 				arrayIndiceUpper[0] = i;
 			}
 		}
 
 		for (int i = 0; i < population.size(); i++) {
-			if ((Double.parseDouble(population.get(i).getVariableValueString(1)) > arrayObjetiveValueUpper[1])
-					&& (i != Lowers[0] && (i != Lowers[1]) && (i != Lowers[2]) && (i != Lowers[3])
-							&& (arrayIndiceUpper[0] != i))) {
-				arrayObjetiveValueUpper[1] = Double.parseDouble(population.get(i).getVariableValueString(1));
+			if ((population.get(i).getObjective(1) > arrayObjetiveValueUpper[1])
+					&& (i != Lowers[0]) && (i != Lowers[1]) && (i != Lowers[2]) && (i != Lowers[3])
+							&& (arrayIndiceUpper[0] != i)) {
+				arrayObjetiveValueUpper[1] = population.get(i).getObjective(1);
 				arrayIndiceUpper[1] = i;
 			}
 		}
 
 		for (int i = 0; i < population.size(); i++) {
-			if ((Double.parseDouble(population.get(i).getVariableValueString(2)) > arrayObjetiveValueUpper[2])
-					&& (i != Lowers[0] && (i != Lowers[1]) && (i != Lowers[2]) && (i != Lowers[3])
-							&& (arrayIndiceUpper[0] != i) && (arrayIndiceUpper[1] != i))) {
-				arrayObjetiveValueUpper[2] = Double.parseDouble(population.get(i).getVariableValueString(2));
+			if ((population.get(i).getObjective(2) > arrayObjetiveValueUpper[2])
+					&& (i != Lowers[0]) && (i != Lowers[1]) && (i != Lowers[2]) && (i != Lowers[3])
+							&& (arrayIndiceUpper[0] != i) && (arrayIndiceUpper[1] != i)) {
+				arrayObjetiveValueUpper[2] = population.get(i).getObjective(2);
 				arrayIndiceUpper[2] = i;
 			}
 		}
 
 		for (int i = 0; i < population.size(); i++) {
-			if ((Double.parseDouble(population.get(i).getVariableValueString(3)) > arrayObjetiveValueUpper[3]
-					&& (i != Lowers[0] && (i != Lowers[1]) && (i != Lowers[2]) && (i != Lowers[3])
+			if ((population.get(i).getObjective(3) > arrayObjetiveValueUpper[3])
+					&& (i != Lowers[0]) && (i != Lowers[1]) && (i != Lowers[2]) && (i != Lowers[3])
 							&& (arrayIndiceUpper[0] != i) && (arrayIndiceUpper[1] != i)
-							&& (arrayIndiceUpper[2] != i)))) {
-				arrayObjetiveValueUpper[3] = Double.parseDouble(population.get(i).getVariableValueString(3));
+							&& (arrayIndiceUpper[2] != i)){
+				arrayObjetiveValueUpper[3] =population.get(i).getObjective(3);
 				arrayIndiceUpper[3] = i;
 			}
 		}
@@ -590,9 +589,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 			Double[] arrayObjetiveValueUpper = new Double[this.problem.getNumberOfObjectives()];
 
 			for (int i = 0; i < arrayObjetiveValueLower.length; i++) {
-				double a=Double.MAX_VALUE;
-				a=a*(-1);
-				arrayObjetiveValueLower[i] =a;
+				arrayObjetiveValueLower[i] =Double.MIN_VALUE;
 				arrayObjetiveValueUpper[i] = Double.MAX_VALUE;
 			}
 
@@ -641,7 +638,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 			Integer[] arrayIndices = new Integer[this.problem.getNumberOfObjectives() * 2];
 
 			for (int i = 0; i < arrayIndices.length; i++) {
-				arrayIndices[i] = gerator.nextInt(population.size());
+				arrayIndices[i] = gerator.nextInt(population.size()-1);
 			}
 
 			for (int i = 0; i < population.size(); i++) {
@@ -725,9 +722,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 			Double[] arrayObjetiveValueUpper = new Double[this.problem.getNumberOfObjectives()];
 
 			for (int i = 0; i < arrayObjetiveValueLower.length; i++) {
-				double a=Double.MAX_VALUE;
-				a=a*(-1);
-				arrayObjetiveValueLower[i] =a;
+				arrayObjetiveValueLower[i] =Double.MIN_VALUE;
 				arrayObjetiveValueUpper[i] = Double.MAX_VALUE;
 			}
 			//se liga, estou mandando o arrayObjetiveValueUpper para o arrayIndiceLower
@@ -809,7 +804,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 			Integer[] arrayIndices = new Integer[this.problem.getNumberOfObjectives() * 2];
 
 			for (int i = 0; i < arrayIndices.length; i++) {
-				arrayIndices[i] = gerator.nextInt(population.size());
+				arrayIndices[i] = gerator.nextInt(population.size()-1);
 			}
 
 			for (int i = 0; i < population.size(); i++) {
@@ -952,9 +947,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 			Double[] arrayObjetiveValueUpper = new Double[this.problem.getNumberOfObjectives()];
 
 			for (int i = 0; i < arrayObjetiveValueLower.length; i++) {
-				double a=Double.MAX_VALUE;
-				a=a*(-1);
-				arrayObjetiveValueLower[i] =a;
+				arrayObjetiveValueLower[i] =Double.MIN_VALUE;
 				arrayObjetiveValueUpper[i] = Double.MAX_VALUE;
 			}
 
@@ -1031,7 +1024,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 			Integer[] arrayIndices = new Integer[this.problem.getNumberOfObjectives() * 2];
 
 			for (int i = 0; i < arrayIndices.length; i++) {
-				arrayIndices[i] = gerator.nextInt(population.size());
+				arrayIndices[i] = gerator.nextInt(population.size()-1);
 			}
 
 			for (int i = 0; i < population.size(); i++) {
