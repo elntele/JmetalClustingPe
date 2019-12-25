@@ -70,6 +70,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	private int LocalSeachFoundNoDominated = 0;
 	private UUID ParallelEvaluateId;
 	private PatternToGml ptg;
+	private List<S> betterPareto;//adiononado por jorge candeias para pegar o front menos dominado
 
 	/** Constructor */
 	public NSGAIII(NSGAIIIBuilder<S> builder) { // can be created from the
@@ -85,7 +86,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 		selectionOperator = builder.getSelectionOperator();
 		parallelEvaluator = builder.getParallelEvaluator();
 		evaluator = builder.getEvaluator();
-		ptg=builder.getPtg();
+		ptg = builder.getPtg();
 		prop = builder.getProp();
 
 		/// NSGAIII
@@ -110,10 +111,10 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	@Override
 	protected void initProgress() {
 		if (this.prop.get("startFromAstopedIteration").equals("y")) {
-			iterations=Integer.parseInt(this.prop.getProperty("interationStopedInExecution"));
-		}else{
+			iterations = Integer.parseInt(this.prop.getProperty("interationStopedInExecution"));
+		} else {
 			iterations = 1;
-			}
+		}
 	}
 
 	@Override
@@ -483,38 +484,37 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	 * com menores valores de objetivo
 	 * 
 	 * @param arrayObjetiveValueLower
-	 * @param population
+	 * @param popReceived
 	 * @return
 	 */
 
-	public Integer[] takeNLowerSolutiox(Double[] arrayObjetiveValueLower, List<S> population) {
+	public Integer[] takeNLowerSolutiox(Double[] arrayObjetiveValueLower, List<S> popReceived) {
 		Integer[] arrayIndice = new Integer[this.problem.getNumberOfObjectives()];
-		for (int i = 0; i < population.size(); i++) {
-			if (population.get(i).getObjective(0) < arrayObjetiveValueLower[0]) {
-				arrayObjetiveValueLower[0] = population.get(i).getObjective(0);
+		for (int i = 0; i < popReceived.size(); i++) {
+			if (popReceived.get(i).getObjective(0) < arrayObjetiveValueLower[0]) {
+				arrayObjetiveValueLower[0] = popReceived.get(i).getObjective(0);
 				arrayIndice[0] = i;
 			}
 		}
-		for (int i = 0; i < population.size(); i++) {
-			if ((population.get(i).getObjective(1) < arrayObjetiveValueLower[1])
-					&& (arrayIndice[0] != i)) {
-				arrayObjetiveValueLower[1] = population.get(i).getObjective(1);
+		for (int i = 0; i < popReceived.size(); i++) {
+			if ((popReceived.get(i).getObjective(1) < arrayObjetiveValueLower[1]) && (arrayIndice[0] != i)) {
+				arrayObjetiveValueLower[1] = popReceived.get(i).getObjective(1);
 				arrayIndice[1] = i;
 			}
 		}
 
-		for (int i = 0; i < population.size(); i++) {
-			if ((population.get(i).getObjective(2) < arrayObjetiveValueLower[2])
-					&& (arrayIndice[0] != i) && (arrayIndice[1] != i)) {
-				arrayObjetiveValueLower[2] =population.get(i).getObjective(2);
+		for (int i = 0; i < popReceived.size(); i++) {
+			if ((popReceived.get(i).getObjective(2) < arrayObjetiveValueLower[2]) && (arrayIndice[0] != i)
+					&& (arrayIndice[1] != i)) {
+				arrayObjetiveValueLower[2] = popReceived.get(i).getObjective(2);
 				arrayIndice[2] = i;
 			}
 		}
 
-		for (int i = 0; i < population.size(); i++) {
-			if ((population.get(i).getObjective(3) < arrayObjetiveValueLower[3])
-					&& (arrayIndice[0] != i) && (arrayIndice[1] != i) && (arrayIndice[2] != i)) {
-				arrayObjetiveValueLower[3] = population.get(i).getObjective(3);
+		for (int i = 0; i < popReceived.size(); i++) {
+			if ((popReceived.get(i).getObjective(3) < arrayObjetiveValueLower[3]) && (arrayIndice[0] != i)
+					&& (arrayIndice[1] != i) && (arrayIndice[2] != i)) {
+				arrayObjetiveValueLower[3] = popReceived.get(i).getObjective(3);
 				arrayIndice[3] = i;
 			}
 		}
@@ -537,43 +537,175 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	public Integer[] takeNUpperSolutiox(Double[] arrayObjetiveValueUpper, List<S> population, Integer[] Lowers) {
 		Integer[] arrayIndiceUpper = new Integer[this.problem.getNumberOfObjectives()];
 		for (int i = 0; i < population.size(); i++) {
-			if ((population.get(i).getObjective(0) > arrayObjetiveValueUpper[0])
-					&& (i != Lowers[0]) && (i != Lowers[1]) && (i != Lowers[2]) && (i != Lowers[3])) {
-				arrayObjetiveValueUpper[0] =population.get(i).getObjective(0);
+			if ((population.get(i).getObjective(0) > arrayObjetiveValueUpper[0]) && (i != Lowers[0]) && (i != Lowers[1])
+					&& (i != Lowers[2]) && (i != Lowers[3])) {
+				arrayObjetiveValueUpper[0] = population.get(i).getObjective(0);
 				arrayIndiceUpper[0] = i;
 			}
 		}
 
 		for (int i = 0; i < population.size(); i++) {
-			if ((population.get(i).getObjective(1) > arrayObjetiveValueUpper[1])
-					&& (i != Lowers[0]) && (i != Lowers[1]) && (i != Lowers[2]) && (i != Lowers[3])
-							&& (arrayIndiceUpper[0] != i)) {
+			if ((population.get(i).getObjective(1) > arrayObjetiveValueUpper[1]) && (i != Lowers[0]) && (i != Lowers[1])
+					&& (i != Lowers[2]) && (i != Lowers[3]) && (arrayIndiceUpper[0] != i)) {
 				arrayObjetiveValueUpper[1] = population.get(i).getObjective(1);
 				arrayIndiceUpper[1] = i;
 			}
 		}
 
 		for (int i = 0; i < population.size(); i++) {
-			if ((population.get(i).getObjective(2) > arrayObjetiveValueUpper[2])
-					&& (i != Lowers[0]) && (i != Lowers[1]) && (i != Lowers[2]) && (i != Lowers[3])
-							&& (arrayIndiceUpper[0] != i) && (arrayIndiceUpper[1] != i)) {
+			if ((population.get(i).getObjective(2) > arrayObjetiveValueUpper[2]) && (i != Lowers[0]) && (i != Lowers[1])
+					&& (i != Lowers[2]) && (i != Lowers[3]) && (arrayIndiceUpper[0] != i)
+					&& (arrayIndiceUpper[1] != i)) {
 				arrayObjetiveValueUpper[2] = population.get(i).getObjective(2);
 				arrayIndiceUpper[2] = i;
 			}
 		}
 
 		for (int i = 0; i < population.size(); i++) {
-			if ((population.get(i).getObjective(3) > arrayObjetiveValueUpper[3])
-					&& (i != Lowers[0]) && (i != Lowers[1]) && (i != Lowers[2]) && (i != Lowers[3])
-							&& (arrayIndiceUpper[0] != i) && (arrayIndiceUpper[1] != i)
-							&& (arrayIndiceUpper[2] != i)){
-				arrayObjetiveValueUpper[3] =population.get(i).getObjective(3);
+			if ((population.get(i).getObjective(3) > arrayObjetiveValueUpper[3]) && (i != Lowers[0]) && (i != Lowers[1])
+					&& (i != Lowers[2]) && (i != Lowers[3]) && (arrayIndiceUpper[0] != i) && (arrayIndiceUpper[1] != i)
+					&& (arrayIndiceUpper[2] != i)) {
+				arrayObjetiveValueUpper[3] = population.get(i).getObjective(3);
 				arrayIndiceUpper[3] = i;
 			}
 		}
 
 		return arrayIndiceUpper;
 	}
+// quando era 8 individuos pior e melhor
+//	/**
+//	 * operador de busca local metodo 1
+//	 * 
+//	 * @param population
+//	 * @return population alterada ou não
+//	 */
+//
+//	public List<S> localSearch(List<S> population, int numberNeighbors) {
+//		List<S> copySolution = new ArrayList<>(population.size());
+//		if (prop.getProperty("eliteSearch").equals("y")) {
+//			Double[] arrayObjetiveValueLower = new Double[this.problem.getNumberOfObjectives()];
+//			Double[] arrayObjetiveValueUpper = new Double[this.problem.getNumberOfObjectives()];
+//
+//			for (int i = 0; i < arrayObjetiveValueLower.length; i++) {
+//				arrayObjetiveValueLower[i] =Double.MIN_VALUE;
+//				arrayObjetiveValueUpper[i] = Double.MAX_VALUE;
+//			}
+//
+//			Integer[] arrayIndiceLower = takeNLowerSolutiox(arrayObjetiveValueUpper.clone(), population);
+//			Integer[] arrayIndiceUpper = takeNUpperSolutiox(arrayObjetiveValueLower.clone(), population,
+//					arrayIndiceLower.clone());
+//
+//			// Jorge candeias
+//
+//			for (int i = 0; i < population.size(); i++) {
+//				// chamada para a busca local
+//				if (i == arrayIndiceLower[0] || i == arrayIndiceLower[1] || i == arrayIndiceLower[2]
+//						|| i == arrayIndiceLower[3] || i == arrayIndiceUpper[0] || i == arrayIndiceUpper[1]
+//						|| i == arrayIndiceUpper[2] || i == arrayIndiceUpper[3]) {
+//					System.out.println("Solução top indice " + i);
+//					IntegerSolution s2 = (changeMatrixElement((IntegerSolution) population.get(i).copy(),
+//							numberNeighbors));// muda
+//					this.problem.evaluate((S) s2);
+//
+//					switch (coparation((IntegerSolution) population.get(i), s2)) {
+//					case -1:
+//						copySolution.add((S) population.get(i));
+//						break;
+//					case 0:
+//						copySolution.add((S) population.get(i));
+//						break;
+//					case 1:
+//						copySolution.add((S) s2);
+//						break;
+//					default:
+//						copySolution.add((S) population.get(i));
+//						System.out.println("deu falha no compara");
+//						break;
+//					}
+//
+//				} else {
+//					copySolution.add((S) population.get(i));
+//
+//				}
+//
+//			}
+//		} else if (prop.getProperty("eliteSearch").equals("n") && prop.getProperty("randomEliteSearch").equals("y")) {
+//
+//			Random gerator = new Random();
+//
+//			Integer[] arrayIndices = new Integer[this.problem.getNumberOfObjectives() * 2];
+//
+//			for (int i = 0; i < arrayIndices.length; i++) {
+//				arrayIndices[i] = gerator.nextInt(population.size()-1);
+//			}
+//
+//			for (int i = 0; i < population.size(); i++) {
+//				// chamada para a busca local
+//				if (i == arrayIndices[0] || i == arrayIndices[1] || i == arrayIndices[2] || i == arrayIndices[3]
+//						|| i == arrayIndices[4] || i == arrayIndices[5] || i == arrayIndices[6]
+//						|| i == arrayIndices[7]) {
+//					System.out.println("Solução da escolha randomica indice " + i);
+//					IntegerSolution s2 = (changeMatrixElement((IntegerSolution) population.get(i).copy(),
+//							numberNeighbors));// muda
+//					this.problem.evaluate((S) s2);
+//
+//					switch (coparation((IntegerSolution) population.get(i), s2)) {
+//					case -1:
+//						copySolution.add((S) population.get(i));
+//						break;
+//					case 0:
+//						copySolution.add((S) population.get(i));
+//						break;
+//					case 1:
+//						copySolution.add((S) s2);
+//						break;
+//					default:
+//						copySolution.add((S) population.get(i));
+//						System.out.println("deu falha no compara");
+//						break;
+//					}
+//
+//				} else {
+//					copySolution.add((S) population.get(i));
+//
+//				}
+//
+//			}
+//
+//		} else {
+//
+//			for (Solution s1 : population) {
+//				// chamada para a busca local
+//				IntegerSolution s2 = (changeMatrixElement((IntegerSolution) s1.copy(), numberNeighbors));// muda
+//																											// um
+//				// elemento
+//				// IntegerSolution s2 = (changeMatrix((IntegerSolution) s1.copy()));
+//				// // muda
+//				// matrix
+//				// inteira
+//				this.problem.evaluate((S) s2);
+//
+//				switch (coparation((IntegerSolution) s1, s2)) {
+//				case -1:
+//					copySolution.add((S) s1);
+//					break;
+//				case 0:
+//					copySolution.add((S) s1);
+//					break;
+//				case 1:
+//					copySolution.add((S) s2);
+//					break;
+//				default:
+//					copySolution.add((S) s1);
+//					System.out.println("deu falha no compara");
+//					break;
+//				}
+//
+//			}
+//		}
+//
+//		return copySolution;
+//	}
 
 	/**
 	 * operador de busca local metodo 1
@@ -589,12 +721,15 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 			Double[] arrayObjetiveValueUpper = new Double[this.problem.getNumberOfObjectives()];
 
 			for (int i = 0; i < arrayObjetiveValueLower.length; i++) {
-				arrayObjetiveValueLower[i] =Double.MIN_VALUE;
+				arrayObjetiveValueLower[i] = Double.MIN_VALUE;
 				arrayObjetiveValueUpper[i] = Double.MAX_VALUE;
 			}
 
-			Integer[] arrayIndiceLower = takeNLowerSolutiox(arrayObjetiveValueUpper.clone(), population);
-			Integer[] arrayIndiceUpper = takeNUpperSolutiox(arrayObjetiveValueLower.clone(), population,
+//			Integer[] arrayIndiceLower = takeNLowerSolutiox(arrayObjetiveValueUpper.clone(), population);
+//			Integer[] arrayIndiceUpper = takeNUpperSolutiox(arrayObjetiveValueLower.clone(), population,
+//					arrayIndiceLower.clone());
+			Integer[] arrayIndiceLower = takeNLowerSolutiox(arrayObjetiveValueUpper.clone(), this.betterPareto);
+			Integer[] arrayIndiceUpper = takeNUpperSolutiox(arrayObjetiveValueLower.clone(), this.betterPareto,
 					arrayIndiceLower.clone());
 
 			// Jorge candeias
@@ -638,7 +773,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 			Integer[] arrayIndices = new Integer[this.problem.getNumberOfObjectives() * 2];
 
 			for (int i = 0; i < arrayIndices.length; i++) {
-				arrayIndices[i] = gerator.nextInt(population.size()-1);
+				arrayIndices[i] = gerator.nextInt(population.size() - 1);
 			}
 
 			for (int i = 0; i < population.size(); i++) {
@@ -722,10 +857,10 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 			Double[] arrayObjetiveValueUpper = new Double[this.problem.getNumberOfObjectives()];
 
 			for (int i = 0; i < arrayObjetiveValueLower.length; i++) {
-				arrayObjetiveValueLower[i] =Double.MIN_VALUE;
+				arrayObjetiveValueLower[i] = Double.MIN_VALUE;
 				arrayObjetiveValueUpper[i] = Double.MAX_VALUE;
 			}
-			//se liga, estou mandando o arrayObjetiveValueUpper para o arrayIndiceLower
+			// se liga, estou mandando o arrayObjetiveValueUpper para o arrayIndiceLower
 			// e o arrayObjetiveValueLower arrayIndiceUpper, ou seja, cruzado.
 
 			Integer[] arrayIndiceLower = takeNLowerSolutiox(arrayObjetiveValueUpper.clone(), population);
@@ -804,7 +939,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 			Integer[] arrayIndices = new Integer[this.problem.getNumberOfObjectives() * 2];
 
 			for (int i = 0; i < arrayIndices.length; i++) {
-				arrayIndices[i] = gerator.nextInt(population.size()-1);
+				arrayIndices[i] = gerator.nextInt(population.size() - 1);
 			}
 
 			for (int i = 0; i < population.size(); i++) {
@@ -947,7 +1082,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 			Double[] arrayObjetiveValueUpper = new Double[this.problem.getNumberOfObjectives()];
 
 			for (int i = 0; i < arrayObjetiveValueLower.length; i++) {
-				arrayObjetiveValueLower[i] =Double.MIN_VALUE;
+				arrayObjetiveValueLower[i] = Double.MIN_VALUE;
 				arrayObjetiveValueUpper[i] = Double.MAX_VALUE;
 			}
 
@@ -999,9 +1134,10 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 						case 1:
 							sDominator = (S) s2.copy();// a nova solução assumi o lugar de dominador
 							population.remove(i);
-							population.add(i,(S) s2.copy());// a nova solução assumi o lugar de anterior para ser comparada com outros
-												// vizinhos na
-												// busca
+							population.add(i, (S) s2.copy());// a nova solução assumi o lugar de anterior para ser
+																// comparada com outros
+							// vizinhos na
+							// busca
 							break;
 						default:
 							System.out.println("deu falha no compara");
@@ -1024,7 +1160,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 			Integer[] arrayIndices = new Integer[this.problem.getNumberOfObjectives() * 2];
 
 			for (int i = 0; i < arrayIndices.length; i++) {
-				arrayIndices[i] = gerator.nextInt(population.size()-1);
+				arrayIndices[i] = gerator.nextInt(population.size() - 1);
 			}
 
 			for (int i = 0; i < population.size(); i++) {
@@ -1071,9 +1207,10 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 						case 1:
 							sDominator = (S) s2.copy();// a nova solução assumi o lugar de dominador
 							population.remove(i);
-							population.add(i,(S) s2.copy());// a nova solução assumi o lugar de anterior para ser comparada com outros
-												// vizinhos na
-												// busca
+							population.add(i, (S) s2.copy());// a nova solução assumi o lugar de anterior para ser
+																// comparada com outros
+							// vizinhos na
+							// busca
 							break;
 						default:
 							System.out.println("deu falha no compara");
@@ -1089,8 +1226,6 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 				}
 
 			}
-
-
 
 		} else {
 
@@ -1151,7 +1286,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	@Override
 	protected List<S> selection(List<S> population) {
 
-		if (this.prop.getProperty("modo").equals("com busca")) {
+		if (this.prop.getProperty("modo").equals("com busca")&&this.iterations>=120) {
 			int numberNeighbors = Integer.parseInt(this.prop.getProperty("numberNeighbors"));// mudar numero de vizinhos
 																								// da busca aqui
 			if (this.prop.getProperty("modo").equals("com busca")) {
@@ -1242,7 +1377,8 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 			fronts.add(ranking.getSubfront(rankingIndex));
 			candidateSolutions += ranking.getSubfront(rankingIndex).size();
 			if ((pop.size() + ranking.getSubfront(rankingIndex).size()) <= getMaxPopulationSize())
-				addRankedSolutionsToPopulation(ranking, rankingIndex, pop);
+				addRankedSolutionsToPopulation(ranking, rankingIndex, pop);// aqui que ele adiciona a sulução raquiada
+																			// pra população
 			rankingIndex++;
 		}
 
@@ -1272,6 +1408,11 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 		List<S> front;
 
 		front = ranking.getSubfront(rank);
+		//adiononado por jorge candeias para pegar o front menos dominado
+		if (rank == 0) {
+			this.betterPareto=front;	
+		}
+
 		for (int i = 0; i < front.size(); i++) {
 			if (front.get(i).getObjective(3) < 1) {
 				population.add(front.get(i));
@@ -1312,19 +1453,18 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 				.setVarFileOutputContext(new DefaultFileOutputContext(path + "/" + "VAR" + this.iterations + ".tsv"))
 				.setFunFileOutputContext(new DefaultFileOutputContext(path + "/" + "FUN" + this.iterations + ".tsv"))
 				.print();
-		//parte nova
+		// parte nova
 		int w = 1;
-		
-		
+
 		new File(prop.getProperty("local") + prop.getProperty("algName") + "/" + prop.getProperty("modo") + "/"
-				+ prop.getProperty("execucao") + "/ResultadoGML"+this.iterations+"/").mkdir();
-		
+				+ prop.getProperty("execucao") + "/ResultadoGML" + this.iterations + "/").mkdir();
+
 		String pathTogml = prop.getProperty("local") + prop.getProperty("algName") + "/" + prop.getProperty("modo")
-		+ "/" + prop.getProperty("execucao");
+				+ "/" + prop.getProperty("execucao");
 		for (Solution<?> i : population) {
-			//IntegerSolution
-			String s = pathTogml + "/ResultadoGML"+this.iterations+"/" + Integer.toString(w) + ".gml";
-			this.ptg.saveGmlFromSolution( s, (IntegerSolution)i);
+			// IntegerSolution
+			String s = pathTogml + "/ResultadoGML" + this.iterations + "/" + Integer.toString(w) + ".gml";
+			this.ptg.saveGmlFromSolution(s, (IntegerSolution) i);
 			List<Integer> centros = new ArrayList<>();
 			for (int j = 0; j < i.getLineColumn().length; j++) {
 				centros.add(i.getLineColumn()[j].getId());
@@ -1332,7 +1472,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 			w += 1;
 
 		}
-		//***********************
+		// ***********************
 
 		JMetalLogger.logger.info("Random Seed: " + JMetalRandom.getInstance().getSeed());
 		JMetalLogger.logger.info("Objectives values have been written to file FUN.tsv");
