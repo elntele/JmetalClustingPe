@@ -19,6 +19,7 @@ public class ReferencePoint<S extends Solution<?>> {
   public List<Double> position ;
   private int memberSize ;
   private List<Pair<S, Double>> potentialMembers ;
+  private List<S>memberList=new ArrayList<>();// adicionado por jorge candeias
 
   public ReferencePoint() {
   }
@@ -77,8 +78,21 @@ public class ReferencePoint<S extends Solution<?>> {
   public void AddPotentialMember(S member_ind, double distance){
     this.potentialMembers.add(new ImmutablePair<S,Double>(member_ind,distance) );
   }
+  //adicionado por jorge candeias
+  public void addMemberToListMember(S member) {
+	  this.memberList.add(member);
+  }
+  
+//adicionado por jorge candeias
+  public List<S> getMemberList() {
+	return memberList;
+}
+//adicionado por jorge candeias
+public void setMemberList(List<S> memberList) {
+	this.memberList = memberList;
+}
 
-  public S FindClosestMember() {
+public S FindClosestMember() {
     double minDistance = Double.MAX_VALUE;
     S closetMember = null;
     for (Pair<S,Double> p : this.potentialMembers) {

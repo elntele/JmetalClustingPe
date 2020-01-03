@@ -1,14 +1,14 @@
 package org.uma.jmetal.algorithm.multiobjective.nsgaiii.util;
 
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.uma.jmetal.operator.SelectionOperator;
 import org.uma.jmetal.solution.Solution;
 import org.uma.jmetal.util.JMetalException;
 import org.uma.jmetal.util.pseudorandom.JMetalRandom;
 import org.uma.jmetal.util.solutionattribute.SolutionAttribute;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @SuppressWarnings("serial")
 public class EnvironmentalSelection<S extends Solution<?>> implements SelectionOperator<List<S>, List<S>>,
@@ -18,6 +18,7 @@ public class EnvironmentalSelection<S extends Solution<?>> implements SelectionO
 	private int solutionsToSelect;
 	private List<ReferencePoint<S>> referencePoints;
 	private int numberOfObjectives;
+	private HyperplaneObsevation hpo;// add  por jorge candeias
 	
 	public EnvironmentalSelection(Builder<S> builder) {
 		fronts = builder.getFronts();
@@ -32,6 +33,7 @@ public class EnvironmentalSelection<S extends Solution<?>> implements SelectionO
 		this.solutionsToSelect  = solutionsToSelect;
 		this.referencePoints 	= referencePoints;
 		this.numberOfObjectives = numberOfObjectives;
+		this.hpo=new HyperplaneObsevation(numberOfObjectives);// adicionadno por jorge candeias
 	}
 	
 	public List<Double> translateObjectives(List<S> population) {
@@ -320,19 +322,53 @@ public class EnvironmentalSelection<S extends Solution<?>> implements SelectionO
 			S chosen = SelectClusterMember(this.referencePoints.get(min_rp));
 			if (chosen == null) // no potential member in Fl, disregard this reference point
 			{
-				this.referencePoints.remove(min_rp); 
+				//linhas adicionadas por jorge canedeias
+				this.hpo.includeReferencePoint( this.referencePoints.get(min_rp));
+				
+				//original code lines
+				this.referencePoints.remove(min_rp);
+				
 			}
 			else
-			{
+			{	//linhas adicionadas por jorge canedeias
+				this.referencePoints.get(min_rp).addMemberToListMember(chosen);
+				//original code lines
 				this.referencePoints.get(min_rp).AddMember();
 				this.referencePoints.get(min_rp).RemovePotentialMember(chosen);
 				source.add(chosen);
+				//linhas adicionadas por jorge canedeias
+				tradeTheObservationPlane(source.size()-1, chosen, this.referencePoints.get(min_rp).pos());
 			}
 		}
-		
+		this.hpo.setLargestReferencePointClusters(this.referencePoints);// add por jorge candeias
+		this.hpo.eQualization();// add por jorge candeias
 		return source;
 	}
 	
+	/**
+	 * adicionado por jorge candeias para trabalhar
+	 * a alimentacao da obsevarcao do hyperplano 
+	 */
+	public void tradeTheObservationPlane(int idInPopulation, S chosen,List <Double> pos  ) {
+		AnIndividualAndHisVector<S> ind = new AnIndividualAndHisVector (chosen, pos,idInPopulation );
+		this.hpo.includeSolutionInGroupAppropriate(ind);
+		
+	}
+	
+	
+	/**
+	 * adicionado por jorge candeias para trabalhar
+	 * a
+	 */
+	public HyperplaneObsevation getHpo() {
+		return hpo;
+	}
+
+
+
+
+
+
 	public static class Builder<S extends Solution<?>> {
 		private List<List<S>> fronts;
 		private int solutionsToSelect;

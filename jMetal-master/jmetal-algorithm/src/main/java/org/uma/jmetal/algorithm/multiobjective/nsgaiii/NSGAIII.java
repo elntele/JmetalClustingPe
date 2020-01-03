@@ -24,6 +24,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.uma.jmetal.algorithm.impl.AbstractGeneticAlgorithm;
 import org.uma.jmetal.algorithm.multiobjective.nsgaiii.util.EnvironmentalSelection;
+import org.uma.jmetal.algorithm.multiobjective.nsgaiii.util.HyperplaneObsevation;
 import org.uma.jmetal.algorithm.multiobjective.nsgaiii.util.ReferencePoint;
 import org.uma.jmetal.gmlNetwaork.PatternToGml;
 import org.uma.jmetal.solution.IntegerSolution;
@@ -70,7 +71,10 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	private int LocalSeachFoundNoDominated = 0;
 	private UUID ParallelEvaluateId;
 	private PatternToGml ptg;
-	private List<S> betterPareto;//adiononado por jorge candeias para pegar o front menos dominado
+	private List<S> betterPareto;// adiononado por jorge candeias para pegar o front menos dominado
+	private List<List<S>> paretos=new ArrayList<>();
+	private List<S> lastPareto;
+	private HyperplaneObsevation hp; // add por jorge candeias
 
 	/** Constructor */
 	public NSGAIII(NSGAIIIBuilder<S> builder) { // can be created from the
@@ -277,6 +281,12 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 		return population;
 
 	}
+	
+	
+	
+//	public void otherTestEqaulsSolution(DefaultIntegerSolution ITs, S oS) {
+//		boolean one =ITs.getvariables().toString().equals(oS.getva);
+//	}
 
 	public void testEqualityBetweenOriginalSolutionAndReturnOfParallelEvaluate(List<DefaultIntegerSolution> pReturned,
 			List<S> population) {
@@ -291,8 +301,9 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 				}
 			}
 			stringVariableFromOriginalPopulation += "]";
-			System.out.println("as soluções são iguais ? " + ((VariableFromRetornedSolution.getvariables()).toString())
-					.equals(stringVariableFromOriginalPopulation));
+			boolean a= VariableFromRetornedSolution.getvariables().toString().equals(stringVariableFromOriginalPopulation);
+			boolean b = ( VariableFromRetornedSolution.getLineColumn().toString().equals(population.get(i).getLineColumn().toString() ) );
+			System.out.println("as soluções são iguais ? " + (a&&b));
 			// .out.println(s.getVariableValue(1));
 			i += 1;
 		}
@@ -479,6 +490,106 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	}
 
 	/**
+	 * metodo crado para auxiliar bringMeBetterObjectives ele verifica se o indice
+	 * em questão esta em um array e retorna um booleano
+	 * 
+	 * @return
+	 */
+	public boolean dontContainIndice(Integer[] b, int indice) {
+		boolean retorno = true;
+		for (int i = 0; i < b.length; i++) {
+			try {
+				if (b[i] == indice) {
+					retorno = false;
+					break;
+				}
+			} catch (Exception e) {
+				break;
+			}
+
+		}
+
+		return retorno;
+	}
+
+	/**
+	 * metodo receve os k objetivos em a lista onde terá que trabalhar e returnna
+	 * uam lista de indice desses objetivos na população
+	 * 
+	 * @param arrayObjetiveValueLower
+	 * @param popReceived
+	 * @return
+	 */
+
+	public Integer[] bringMeTheIndiceOfIndividualsWhithBetterObjectives(int individualsNumber, List<S> popReceived,
+			int slice, List<S> populationParateste) {
+		int deslocamento = 0;
+
+		if (slice == 0) {
+			deslocamento = 0;
+		} else if (slice > 1) {
+			for (int i = 0; i < slice - 1; i++) {
+				deslocamento = deslocamento + this.paretos.get(i).size();
+			}
+		}
+
+		Integer[] arrayIndice = new Integer[individualsNumber];
+		Double[] arrayObjetiveBetterValue = new Double[individualsNumber];
+
+		for (int i = 0; i < arrayObjetiveBetterValue.length; i++) {
+			arrayObjetiveBetterValue[i] = Double.MAX_VALUE;
+		}
+
+		int numberOfObjetive = 0;
+		for (int i = 0; i < individualsNumber; i++) {
+			for (int k = 0; k < popReceived.size(); k++) {
+
+				if (numberOfObjetive == this.problem.getNumberOfObjectives()) {
+					numberOfObjetive = 0;
+				}
+
+				if (numberOfObjetive == 3) {
+					double inv = popReceived.get(k).getObjective(numberOfObjetive);
+					inv = 1 / (1 + inv);
+					if (inv < arrayObjetiveBetterValue[i] && dontContainIndice(arrayIndice, k)) {
+						arrayObjetiveBetterValue[i] = popReceived.get(k).getObjective(numberOfObjetive);
+						arrayIndice[i] = k;
+					}
+
+				} else if (popReceived.get(k).getObjective(numberOfObjetive) < arrayObjetiveBetterValue[i]
+						&& dontContainIndice(arrayIndice, k)) {
+					arrayObjetiveBetterValue[i] = popReceived.get(k).getObjective(numberOfObjetive);
+					arrayIndice[i] = k;
+				}
+
+			}
+			numberOfObjetive += 1;
+		}
+
+		// se for usra o teste comentar esse for
+		for (int i = 0; i < arrayIndice.length; i++) {
+			arrayIndice[i] += deslocamento;
+		}
+
+//		teste: tem que alterar o recebimento do método pra receber a populacao tambem
+//		no teste comentado abaixo a chamei de populationParateste e recebi ela como parametro
+//		do metodo (obs: tem que comentar o for acima pos ele entra na logica logo abaixo):
+//		Integer[] copy = arrayIndice.clone();
+//
+//		for (int i = 0; i < arrayIndice.length; i++) {
+//			arrayIndice[i] += deslocamento;
+//		}
+//		for (int i = 0; i < copy.length; i++) {
+//			List<DefaultIntegerSolution> population = new ArrayList<>();
+//			List<S> listaEmTeste = new ArrayList<>();
+//			population.add((DefaultIntegerSolution) populationParateste.get(arrayIndice[i]));
+//			listaEmTeste.add(popReceived.get(copy[i]));
+//			this.testEqualityBetweenOriginalSolutionAndReturnOfParallelEvaluate(population, listaEmTeste);
+//		}
+		return arrayIndice;
+	}
+
+	/**
 	 * metodo recebe a população e uma lista com n-numerofobjetives com o maior
 	 * valor de doubler e retorna um array com o indice das 4 soluções da população
 	 * com menores valores de objetivo
@@ -488,7 +599,18 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	 * @return
 	 */
 
-	public Integer[] takeNLowerSolutiox(Double[] arrayObjetiveValueLower, List<S> popReceived) {
+	public Integer[] takeNLowerSolutiox(Double[] arrayObjetiveValueLower, List<S> popReceived, int slice,
+			List<S> populationParateste) {
+		int deslocamento = 0;
+
+		if (slice == 0) {
+			deslocamento = 0;
+		} else if (slice > 1) {
+			for (int i = 0; i < slice - 1; i++) {
+				deslocamento = deslocamento + this.paretos.get(i).size();
+			}
+		}
+
 		Integer[] arrayIndice = new Integer[this.problem.getNumberOfObjectives()];
 		for (int i = 0; i < popReceived.size(); i++) {
 			if (popReceived.get(i).getObjective(0) < arrayObjetiveValueLower[0]) {
@@ -518,6 +640,25 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 				arrayIndice[3] = i;
 			}
 		}
+//		for (int i = 0; i < arrayIndice.length; i++) {
+//			arrayIndice[i] += deslocamento;
+//		}
+
+//		teste: tem que alterar o recebimento do método pra receber a populacao tambem
+//		no teste comentado abaixo a chamei de populationParateste e recebi ela como parametro
+//		do metodo (obs: tem que comentar o for acima pos ele entra na logica logo abaixo):
+		Integer[] copy = arrayIndice.clone();
+
+		for (int i = 0; i < arrayIndice.length; i++) {
+			arrayIndice[i] += deslocamento;
+		}
+		for (int i = 0; i < copy.length; i++) {
+			List<DefaultIntegerSolution> population = new ArrayList<>();
+			List<S> listaEmTeste = new ArrayList<>();
+			population.add((DefaultIntegerSolution) populationParateste.get(arrayIndice[i]));
+			listaEmTeste.add(popReceived.get(copy[i]));
+			this.testEqualityBetweenOriginalSolutionAndReturnOfParallelEvaluate(population, listaEmTeste);
+		}
 
 		return arrayIndice;
 	}
@@ -531,43 +672,70 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	 * valores de objetivo
 	 * 
 	 * @param arrayObjetiveValueLower
-	 * @param population
+	 * @param popReceived
 	 * @return
 	 */
-	public Integer[] takeNUpperSolutiox(Double[] arrayObjetiveValueUpper, List<S> population, Integer[] Lowers) {
+	public Integer[] takeNUpperSolutiox(Double[] arrayObjetiveValueUpper, List<S> popReceived, Integer[] Lowers,
+			int slice, List<S> populationParateste) {
+		int deslocamento = 0;
+
+		if (slice == 0) {
+			deslocamento = 0;
+		} else if (slice > 1) {
+			for (int i = 0; i < slice - 1; i++) {
+				deslocamento = deslocamento + this.paretos.get(i).size();
+			}
+		}
+
 		Integer[] arrayIndiceUpper = new Integer[this.problem.getNumberOfObjectives()];
-		for (int i = 0; i < population.size(); i++) {
-			if ((population.get(i).getObjective(0) > arrayObjetiveValueUpper[0]) && (i != Lowers[0]) && (i != Lowers[1])
-					&& (i != Lowers[2]) && (i != Lowers[3])) {
-				arrayObjetiveValueUpper[0] = population.get(i).getObjective(0);
+		for (int i = 0; i < popReceived.size(); i++) {
+			if ((popReceived.get(i).getObjective(0) > arrayObjetiveValueUpper[0]) && (i != Lowers[0])
+					&& (i != Lowers[1]) && (i != Lowers[2]) && (i != Lowers[3])) {
+				arrayObjetiveValueUpper[0] = popReceived.get(i).getObjective(0);
 				arrayIndiceUpper[0] = i;
 			}
 		}
 
-		for (int i = 0; i < population.size(); i++) {
-			if ((population.get(i).getObjective(1) > arrayObjetiveValueUpper[1]) && (i != Lowers[0]) && (i != Lowers[1])
-					&& (i != Lowers[2]) && (i != Lowers[3]) && (arrayIndiceUpper[0] != i)) {
-				arrayObjetiveValueUpper[1] = population.get(i).getObjective(1);
+		for (int i = 0; i < popReceived.size(); i++) {
+			if ((popReceived.get(i).getObjective(1) > arrayObjetiveValueUpper[1]) && (i != Lowers[0])
+					&& (i != Lowers[1]) && (i != Lowers[2]) && (i != Lowers[3]) && (arrayIndiceUpper[0] != i)) {
+				arrayObjetiveValueUpper[1] = popReceived.get(i).getObjective(1);
 				arrayIndiceUpper[1] = i;
 			}
 		}
 
-		for (int i = 0; i < population.size(); i++) {
-			if ((population.get(i).getObjective(2) > arrayObjetiveValueUpper[2]) && (i != Lowers[0]) && (i != Lowers[1])
-					&& (i != Lowers[2]) && (i != Lowers[3]) && (arrayIndiceUpper[0] != i)
+		for (int i = 0; i < popReceived.size(); i++) {
+			if ((popReceived.get(i).getObjective(2) > arrayObjetiveValueUpper[2]) && (i != Lowers[0])
+					&& (i != Lowers[1]) && (i != Lowers[2]) && (i != Lowers[3]) && (arrayIndiceUpper[0] != i)
 					&& (arrayIndiceUpper[1] != i)) {
-				arrayObjetiveValueUpper[2] = population.get(i).getObjective(2);
+				arrayObjetiveValueUpper[2] = popReceived.get(i).getObjective(2);
 				arrayIndiceUpper[2] = i;
 			}
 		}
 
-		for (int i = 0; i < population.size(); i++) {
-			if ((population.get(i).getObjective(3) > arrayObjetiveValueUpper[3]) && (i != Lowers[0]) && (i != Lowers[1])
-					&& (i != Lowers[2]) && (i != Lowers[3]) && (arrayIndiceUpper[0] != i) && (arrayIndiceUpper[1] != i)
-					&& (arrayIndiceUpper[2] != i)) {
-				arrayObjetiveValueUpper[3] = population.get(i).getObjective(3);
+		for (int i = 0; i < popReceived.size(); i++) {
+			if ((popReceived.get(i).getObjective(3) > arrayObjetiveValueUpper[3]) && (i != Lowers[0])
+					&& (i != Lowers[1]) && (i != Lowers[2]) && (i != Lowers[3]) && (arrayIndiceUpper[0] != i)
+					&& (arrayIndiceUpper[1] != i) && (arrayIndiceUpper[2] != i)) {
+				arrayObjetiveValueUpper[3] = popReceived.get(i).getObjective(3);
 				arrayIndiceUpper[3] = i;
 			}
+		}
+
+//		teste: tem que alterar o recebimento do método pra receber a populacao tambem
+//		no teste comentado abaixo a chamei de populationParateste e recebi ela como parametro
+//		do metodo (obs: tem que comentar o for acima pos ele entra na logica logo abaixo):
+		Integer[] copy = arrayIndiceUpper.clone();
+
+		for (int i = 0; i < arrayIndiceUpper.length; i++) {
+			arrayIndiceUpper[i] += deslocamento;
+		}
+		for (int i = 0; i < copy.length; i++) {
+			List<DefaultIntegerSolution> population = new ArrayList<>();
+			List<S> listaEmTeste = new ArrayList<>();
+			population.add((DefaultIntegerSolution) populationParateste.get(arrayIndiceUpper[i]));
+			listaEmTeste.add(popReceived.get(copy[i]));
+			this.testEqualityBetweenOriginalSolutionAndReturnOfParallelEvaluate(population, listaEmTeste);
 		}
 
 		return arrayIndiceUpper;
@@ -724,13 +892,64 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 				arrayObjetiveValueLower[i] = Double.MIN_VALUE;
 				arrayObjetiveValueUpper[i] = Double.MAX_VALUE;
 			}
-
+			List<Integer> re = this.hp.selectTheCandidatesTolocalsearch(this.prop);
+			System.out.println("soluções que atende, a regra " + this.hp.getTesteSolQueAtendExecge());
+			System.out.println("soluções que não atendem  a regra " + this.hp.getTesteSolQueAtendExecge());
+			
 //			Integer[] arrayIndiceLower = takeNLowerSolutiox(arrayObjetiveValueUpper.clone(), population);
 //			Integer[] arrayIndiceUpper = takeNUpperSolutiox(arrayObjetiveValueLower.clone(), population,
 //					arrayIndiceLower.clone());
-			Integer[] arrayIndiceLower = takeNLowerSolutiox(arrayObjetiveValueUpper.clone(), this.betterPareto);
-			Integer[] arrayIndiceUpper = takeNUpperSolutiox(arrayObjetiveValueLower.clone(), this.betterPareto,
-					arrayIndiceLower.clone());
+//			Integer[] arrayIndiceLower = takeNLowerSolutiox(arrayObjetiveValueUpper.clone(), this.betterPareto, 0,population);
+//			Integer[] arrayIndiceUpper = takeNUpperSolutiox(arrayObjetiveValueLower.clone(), this.betterPareto,
+//					arrayIndiceLower.clone(), 0,population);
+////
+			int medio = re.size() / 2;
+			Integer[] arrayIndiceLower = new Integer[medio];
+			Integer[] arrayIndiceUpper = new Integer[medio];
+
+			for (int i = 0; i < re.size() / 2; i++) {
+				arrayIndiceLower[i] = re.get(i);
+				arrayIndiceUpper[i] = re.get(medio);
+				medio += 1;
+
+			}
+			/*
+			// teste **********************************
+
+			List<DefaultIntegerSolution> populationParaTesteVindoDeHp = this.hp.getListaParaTeste();
+			List<S> populationLocal = new ArrayList<>();
+			for (int i = 0; i < re.size(); i++) {
+				populationLocal.add(population.get(re.get(i)));
+
+			}
+			
+			this.testEqualityBetweenOriginalSolutionAndReturnOfParallelEvaluate(populationParaTesteVindoDeHp,
+					populationLocal);
+					*/
+
+//			for (int i = 0; i < copy.length; i++) {
+//				List<DefaultIntegerSolution> population = new ArrayList<>();
+//				List<S> listaEmTeste = new ArrayList<>();
+//				population.add((DefaultIntegerSolution) populationParateste.get(arrayIndice[i]));
+//				listaEmTeste.add(popReceived.get(copy[i]));
+//				this.testEqualityBetweenOriginalSolutionAndReturnOfParallelEvaluate(population, listaEmTeste);
+//			}
+
+			// ******************************************
+
+//
+
+//			Integer[] bigArray = bringMeTheIndiceOfIndividualsWhithBetterObjectives(8, this.betterPareto,
+//					this.paretos.size(), population);
+//			Integer[] arrayIndiceLower = new Integer[4];
+//			Integer[] arrayIndiceUpper= new Integer[4];
+//			
+//			for (int i=0;i<4;i++) {
+//				if (i<4) {
+//					arrayIndiceLower[i]=bigArray[i];
+//					arrayIndiceUpper[i]=bigArray[i+4];
+//					}
+//			}
 
 			// Jorge candeias
 
@@ -840,7 +1059,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 
 			}
 		}
-
+		this.paretos.removeAll(this.paretos);
 		return copySolution;
 	}
 
@@ -863,9 +1082,18 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 			// se liga, estou mandando o arrayObjetiveValueUpper para o arrayIndiceLower
 			// e o arrayObjetiveValueLower arrayIndiceUpper, ou seja, cruzado.
 
-			Integer[] arrayIndiceLower = takeNLowerSolutiox(arrayObjetiveValueUpper.clone(), population);
+			Integer[] arrayIndiceLower = takeNLowerSolutiox(arrayObjetiveValueUpper.clone(), population, 0, population);// foi
+																														// zonado
+																														// pra
+																														// tirar
+																														// um
+																														// erro
+																														// tem
+																														// que
+																														// ser
+																														// revisado
 			Integer[] arrayIndiceUpper = takeNUpperSolutiox(arrayObjetiveValueLower.clone(), population,
-					arrayIndiceLower.clone());
+					arrayIndiceLower.clone(), 0, population);// foi zonado pra tirar um erro tem que ser revisado
 
 			// Jorge candeias
 
@@ -1086,9 +1314,18 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 				arrayObjetiveValueUpper[i] = Double.MAX_VALUE;
 			}
 
-			Integer[] arrayIndiceLower = takeNLowerSolutiox(arrayObjetiveValueUpper.clone(), population);
+			Integer[] arrayIndiceLower = takeNLowerSolutiox(arrayObjetiveValueUpper.clone(), population, 0, population);// foi
+																														// zonado
+																														// pra
+																														// tirar
+																														// um
+																														// erro
+																														// tem
+																														// que
+																														// ser
+																														// revisado
 			Integer[] arrayIndiceUpper = takeNUpperSolutiox(arrayObjetiveValueLower.clone(), population,
-					arrayIndiceLower.clone());
+					arrayIndiceLower.clone(), 0, population);// foi zonado pra tirar um erro tem que ser revisado
 
 			// Jorge candeias
 
@@ -1286,7 +1523,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	@Override
 	protected List<S> selection(List<S> population) {
 
-		if (this.prop.getProperty("modo").equals("com busca")&&this.iterations>=120) {
+		if (this.prop.getProperty("modo").equals("com busca") && this.iterations >= 120) {
 			int numberNeighbors = Integer.parseInt(this.prop.getProperty("numberNeighbors"));// mudar numero de vizinhos
 																								// da busca aqui
 			if (this.prop.getProperty("modo").equals("com busca")) {
@@ -1359,6 +1596,17 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 		return copy;
 	}
 
+	/**
+	 * metodo criado para gradar os paretos do problema na intenção de usar da busca
+	 * local
+	 * 
+	 * @param index
+	 * @param pareto
+	 */
+	private void reservPretos(int index, List<S> pareto) {
+
+	}
+
 	@Override
 	protected List<S> replacement(List<S> population, List<S> offspringPopulation) {
 
@@ -1375,10 +1623,11 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 		int candidateSolutions = 0;
 		while (candidateSolutions < getMaxPopulationSize()) {
 			fronts.add(ranking.getSubfront(rankingIndex));
+			reservPretos(rankingIndex, fronts.get(rankingIndex));// adiocionado por jorge candeias
 			candidateSolutions += ranking.getSubfront(rankingIndex).size();
 			if ((pop.size() + ranking.getSubfront(rankingIndex).size()) <= getMaxPopulationSize())
-				addRankedSolutionsToPopulation(ranking, rankingIndex, pop);// aqui que ele adiciona a sulução raquiada
-																			// pra população
+				addRankedSolutionsToPopulation(ranking, rankingIndex, pop);// aqui que ele adiciona a sulução ranquiada
+																			// pra população, mas só no inicio
 			rankingIndex++;
 		}
 
@@ -1388,7 +1637,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 				getReferencePointsCopy(), getProblem().getNumberOfObjectives());
 
 		pop = selection.execute(pop);
-
+		this.hp = selection.getHpo();
 		return pop;
 	}
 
@@ -1408,10 +1657,13 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 		List<S> front;
 
 		front = ranking.getSubfront(rank);
-		//adiononado por jorge candeias para pegar o front menos dominado
+		// adiononado por jorge candeias para pegar o front menos dominado
 		if (rank == 0) {
-			this.betterPareto=front;	
+			this.betterPareto = front;
 		}
+//		this.betterPareto = front;
+
+		this.paretos.add(front);
 
 		for (int i = 0; i < front.size(); i++) {
 			if (front.get(i).getObjective(3) < 1) {
