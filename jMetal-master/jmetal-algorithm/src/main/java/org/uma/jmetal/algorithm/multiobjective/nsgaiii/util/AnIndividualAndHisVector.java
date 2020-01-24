@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.uma.jmetal.solution.impl.DefaultIntegerSolution;
+import org.uma.jmetal.util.evaluator.impl.SeverAndId;
 /**
  * Classe criada para auxiliar HyperPlaneObservation
  *esse objeto guarda informações sobre a situação de
@@ -14,7 +15,7 @@ import org.uma.jmetal.solution.impl.DefaultIntegerSolution;
  * @param <S>
  */
 
-public class AnIndividualAndHisVector <S> {
+public class AnIndividualAndHisVector <S> implements Comparable{
 	private DefaultIntegerSolution solution;
 	private int myTrends;
 	List <Double> positionOfMyProprietaryPoint;
@@ -43,7 +44,7 @@ public class AnIndividualAndHisVector <S> {
 
 
 
-	public AnIndividualAndHisVector(S solution, List<Double> positionOfMyProprietaryPoint,
+	public AnIndividualAndHisVector(S solution/*, List<Double> positionOfMyProprietaryPoint*/,
 			int myIndexInPopulation) {
 		super();
 		this.solution = (DefaultIntegerSolution) solution;
@@ -100,7 +101,14 @@ public class AnIndividualAndHisVector <S> {
 		this.myIndexInPopulation = myIndexInPopulation;
 	}
 	
-	
+	/**
+	 * metodo inserido para ordenação de listas de objetos severAndId
+	 */
+	@Override
+	public int compareTo(Object indivi) {
+		int objetive=(int)((AnIndividualAndHisVector<S>)indivi).getSolution().getObjective(this.myGroups);
+		return (int) ((Double) this.solution.getObjective(this.myGroups)-objetive);
+	}
 	
 
 }

@@ -22,7 +22,7 @@ import org.uma.jmetal.solution.impl.DefaultIntegerSolution;
 
 public class HyperplaneObsevation<S extends Solution<?>> {
 	// for n objectives, n lists in this list of list
-	private List<List<AnIndividualAndHisVector>> familyOfIndividualInPopulation;
+	private List<List<AnIndividualAndHisVector<S>>> familyOfIndividualInPopulation=new ArrayList<>();
 	private List<ReferencePoint> AllRefencePoints;
 	private List<List<ReferencePoint>> LargestReferencePointClusters;
 	private int numberOfObjectives;
@@ -34,59 +34,51 @@ public class HyperplaneObsevation<S extends Solution<?>> {
 	private List<Map<String, ReferencePoint>> mapLargest = new ArrayList<>();
 	private List<Double> eQualizationList = new ArrayList<>();
 	private List<DefaultIntegerSolution> ListaParaTeste = new ArrayList<>();
-	private int TesteSolQueAtendExecge=0 ;
-	private int TesteSolQueNaoAtendExecge=0;
+	private int TesteSolQueAtendExecge = 0;
+	private int TesteSolQueNaoAtendExecge = 0;
 
 	public HyperplaneObsevation(int numberOfObjectives) {
 		this.numberOfObjectives = numberOfObjectives;
 		this.AllRefencePoints = new ArrayList<>();
-		this.familyOfIndividualInPopulation = new ArrayList<>();
 		for (int i = 0; i < numberOfObjectives; i++) {
-			List<AnIndividualAndHisVector> l = new ArrayList<>();
+			List<AnIndividualAndHisVector<S>> l = new ArrayList<>();
 			this.familyOfIndividualInPopulation.add(l);
 		}
 
 		this.LargestReferencePointClusters = new ArrayList<>();
 	}
-	
-	
 
 	public int getTesteSolQueAtendExecge() {
 		return TesteSolQueAtendExecge;
 	}
 
-
 	public int getTesteSolQueNaoAtendExecge() {
 		return TesteSolQueNaoAtendExecge;
 	}
-
-
-
-
-
-
-
-
-
 
 	public List<DefaultIntegerSolution> getListaParaTeste() {
 		return ListaParaTeste;
 	}
 
-
-
-
-
-	public void includeSolutionInGroupAppropriate(AnIndividualAndHisVector ind) {
+	public int includeSolutionInGroupAppropriate(AnIndividualAndHisVector <S> ind) {
 		List<Double> d = getAttribute(ind.getSolution());
 		int mG = myGroup(d);
 		ind.setMyGroups(mG);
 		setTheIndividualTrend(d, ind);
-		if (mG>=4){
+		if (mG >= 4 || mG<0) {
 			System.out.println("index de grupo indesejado");
 		}
-		this.familyOfIndividualInPopulation.get(mG).add(ind);
-
+			int antes=this.familyOfIndividualInPopulation.get(mG).size();
+			this.familyOfIndividualInPopulation.get(mG).add((AnIndividualAndHisVector <S>)ind);
+			int depois=this.familyOfIndividualInPopulation.get(mG).size();
+			if (antes==depois) {
+				System.out.println();
+			}
+			int testeRetorno=0;
+			for (int i=0;i<this.familyOfIndividualInPopulation.size();i++) {
+				testeRetorno+=this.familyOfIndividualInPopulation.get(i).size();
+			}
+			return testeRetorno;
 	}
 
 	public void setSearchTypeS(Properties prop) {
@@ -129,19 +121,19 @@ public class HyperplaneObsevation<S extends Solution<?>> {
 			icurrent++;
 		}
 		if (equals.size() == 0) {
-			//teste
-			if (iLower>=4) {
+			// teste
+			if (iLower >= 4) {
 				System.out.println("situação indesejada em myGroup ");
 			}
-			//*************
+			// *************
 			return iLower;
 		} else {
-			//teste
-			int r =gerator.nextInt(equals.size() - 1);
-			if (r>=4) {
+			// teste
+			int r = gerator.nextInt(equals.size() - 1);
+			if (r >= 4) {
 				System.out.println("situação indesejada em myGroup ");
 			}
-			//**********
+			// **********
 			return r;
 		}
 
@@ -213,6 +205,12 @@ public class HyperplaneObsevation<S extends Solution<?>> {
 	public List getLargestReferencePointClusters() {
 		return LargestReferencePointClusters;
 	}
+	
+	
+
+	public List<Double> geteQualizationList() {
+		return eQualizationList;
+	}
 
 	public void setLargestReferencePointClusters(List<ReferencePoint<S>> largestReferencePointClusters) {
 
@@ -263,11 +261,12 @@ public class HyperplaneObsevation<S extends Solution<?>> {
 
 	}
 
-	public List<List<AnIndividualAndHisVector>> getFamilyOfIndividualInPopulation() {
+
+	public List<List<AnIndividualAndHisVector<S>>> getFamilyOfIndividualInPopulation() {
 		return familyOfIndividualInPopulation;
 	}
 
-	public void setFamilyOfIndividualInPopulation(List<List<AnIndividualAndHisVector>> familyOfIndividualInPopulation) {
+	public void setFamilyOfIndividualInPopulation(List<List<AnIndividualAndHisVector<S>>> familyOfIndividualInPopulation) {
 		this.familyOfIndividualInPopulation = familyOfIndividualInPopulation;
 	}
 
@@ -304,7 +303,7 @@ public class HyperplaneObsevation<S extends Solution<?>> {
 		} else {
 			this.equalized = true;
 		}
-		if (equali.size()==0) {
+		if (equali.size() == 0) {
 			System.out.println("situação indesejada em eQualization()");
 		}
 		this.eQualizationList = equali;
@@ -331,7 +330,7 @@ public class HyperplaneObsevation<S extends Solution<?>> {
 		if (this.equalized) {
 			return r;
 		} else {
-			AssociateTheLargestToThefamilyOfIndividualInPopulation(prop);
+		//	AssociateTheLargestToThefamilyOfIndividualInPopulation(prop);
 			r = calcTheCandidates(prop);
 			return r;
 		}
@@ -348,7 +347,7 @@ public class HyperplaneObsevation<S extends Solution<?>> {
 		double poor = Double.MAX_VALUE;
 		int iRich = 0;
 		int iPoor = 0;
-
+/*
 		for (int i = 0; i < distributed.size(); i++) {
 			if (l.contains(i)) {
 				if (distributed.get(i) < poor) {
@@ -368,48 +367,86 @@ public class HyperplaneObsevation<S extends Solution<?>> {
 
 		if (iRich == iPoor) {
 			System.out.println("situação indesejada");
+		}*/
+
+		// se este metodo funcionar adeguar tudo inclisive deletando irich e ipoor
+		List<Double> sortedEQualizationList = new ArrayList<>();
+		sortedEQualizationList.addAll(this.eQualizationList);
+		Collections.sort(sortedEQualizationList);
+		List<Integer> poorToRich = new ArrayList<>();
+		for (Double d : sortedEQualizationList) {
+			for (int i = 0; i < this.eQualizationList.size(); i++) {
+				if (d == this.eQualizationList.get(i)) {
+					poorToRich.add(i);
+				}
+			}
 		}
 
 		List<Integer> indexOfPossibleTobefact = new ArrayList<>();
-		// primeiro coloca-se na lista de individous para busca os elementos
-		// do strik ou dos maiores clustes que atenden a gegra de esta no
-		// rico e tender pro pobre.
-		for (AnIndividualAndHisVector<S> a : this.strikeTargetGroup) {
-			if (indexOfPossibleTobefact.size() < SolutNumber/* / 2*/) {// teste colocar o máximo do strik goup
-				if (a.getMyGroups() == iRich) {
-					if (a.getMyTrends() == iPoor) {
-						indexOfPossibleTobefact.add(a.getMyIndexInPopulation());
-						this.ListaParaTeste.add(a.getSolution());
-						this.TesteSolQueAtendExecge+=1;
-					}
+//		// primeiro coloca-se na lista de individuos para busca os elementos
+//		// do strik ou dos maiores clustes que atenden a regra de esta no
+//		// rico e tender pro pobre.
+//		for (AnIndividualAndHisVector<S> a : this.strikeTargetGroup) {
+//			if (indexOfPossibleTobefact.size() < SolutNumber / 2) {// teste colocar o máximo do strik goup
+//				if (a.getMyGroups() == iRich) {
+//					if (a.getMyTrends() == iPoor) {
+//						indexOfPossibleTobefact.add(a.getMyIndexInPopulation());
+//						this.ListaParaTeste.add(a.getSolution());
+//						this.TesteSolQueAtendExecge+=1;
+//					}
+//				}
+//			} else {
+//				break;
+//			}
+//
+//		}
+
+		
+
+		for (int i = 0; i < this.familyOfIndividualInPopulation.size(); i++) {
+			Collections.sort(this.familyOfIndividualInPopulation.get(i));
+		}
+		//coloca se os individuos estão nas areas mais pobre primeiro depois nas areas mais ricas
+		// as listas de listas de familyOfIndividualInPopulation ja foi ordenada no 
+		// loop for acima, então o for abaixo ja coloca os indivíduos de menores objetivos 
+		// de cada area 
+		for (Integer index : poorToRich) {
+			for (AnIndividualAndHisVector<S> a : this.familyOfIndividualInPopulation.get(index)) {
+				if (indexOfPossibleTobefact.size() < SolutNumber) {// teste colocar o máximo do strik goup
+					indexOfPossibleTobefact.add(a.getMyIndexInPopulation());
+					this.ListaParaTeste.add(a.getSolution());
+					this.TesteSolQueAtendExecge += 1;
+
+				} else {
+					break;
 				}
-			} else {
-				break;
+
 			}
 
 		}
-
+		/*teste
 //		depois, caso não tenha chegado ao menos a metade de individuos. 
 //		coloca-se a metade dos individos que estao na lista de strik 
 //		como uma unica condicao: que ele estaja em um eixo de atuação
 //		da busca, inclusive essa questao de ter que pertencer a um
 //		eixo afetado pela busca ja foi tratada no preenchimento da lista
 //		strikeTargetGroup.
-		if (indexOfPossibleTobefact.size() < (SolutNumber /*/ 2*/)) {// teste colocar o máximo do strik goup
+		if (indexOfPossibleTobefact.size() < (SolutNumber / 2)) {// teste colocar o máximo do strik goup
 			for (AnIndividualAndHisVector<S> a : this.strikeTargetGroup) {
 				if (a.getMyGroups() == iRich) {
 
 					indexOfPossibleTobefact.add(a.getMyIndexInPopulation());
 					this.ListaParaTeste.add(a.getSolution());
-					this.TesteSolQueNaoAtendExecge+=1;
-					if (indexOfPossibleTobefact.size() >= (SolutNumber /* / 2*/)) {
+					this.TesteSolQueNaoAtendExecge += 1;
+					if (indexOfPossibleTobefact.size() >= (SolutNumber / 2)) {
 						break;
 					}
 
 				}
 			}
 		}
-		/* teste teste colocar o máximo do strik goup
+		
+//		 teste teste colocar o máximo do strik goup
 //		a partir de agora serão colocados mebros da area rica, acontece que nem sempre 
 //		os maiores clusteres estão na area rica, então eh preciso dividir os eleitos pra
 //		busca entre esses dois grupos: individous que estao nos clusters grande e individuos
@@ -431,6 +468,7 @@ public class HyperplaneObsevation<S extends Solution<?>> {
 									if (indexOfPossibleTobefact.size() < SolutNumber) {
 										indexOfPossibleTobefact.add(a.getMyIndexInPopulation());
 										this.ListaParaTeste.add(a.getSolution());
+										this.TesteSolQueAtendExecge += 1;
 									} else {
 										break for1;
 									}
@@ -466,6 +504,7 @@ public class HyperplaneObsevation<S extends Solution<?>> {
 											this.familyOfIndividualInPopulation.get(g).get(i).getMyIndexInPopulation());
 									this.ListaParaTeste
 											.add(this.familyOfIndividualInPopulation.get(g).get(i).getSolution());
+									this.TesteSolQueNaoAtendExecge += 1;
 								}
 							} else {
 								break for2;
@@ -489,18 +528,21 @@ public class HyperplaneObsevation<S extends Solution<?>> {
 				}
 			}
 		}
-		
-		while(indexOfPossibleTobefact.size()<SolutNumber) {
-			for (int i=0;i<indexOfPossibleTobefact.size();i++) {
-				if  (indexOfPossibleTobefact.size()<SolutNumber) {
-					indexOfPossibleTobefact.add(indexOfPossibleTobefact.get(i));
-				}else {
-					break;
-				}
-			}
-			
+
+//		while(indexOfPossibleTobefact.size()<SolutNumber) {
+//			for (int i=0;i<indexOfPossibleTobefact.size();i++) {
+//				if  (indexOfPossibleTobefact.size()<SolutNumber) {
+//					indexOfPossibleTobefact.add(indexOfPossibleTobefact.get(i));
+//				}else {
+//					break;
+//				}
+//			}
+//			
+//		}
+teste */
+		if (indexOfPossibleTobefact.size()<SolutNumber) {
+			System.out.println();
 		}
-*/
 		return indexOfPossibleTobefact;
 	}
 
@@ -518,20 +560,21 @@ public class HyperplaneObsevation<S extends Solution<?>> {
 		for (int i = 0; i < l.size(); i++) {// i representa o objetivo que a busca interfere
 			for (int k = 0; k < this.familyOfIndividualInPopulation.size(); k++) {// k a o indice da lista de listas de
 																					// individuos
-				if (l.contains(k)) {// veja condicao 1: a lista de lista de individuos é estruturada conforme os
-									// objetivos
-					for (AnIndividualAndHisVector<S> a : familyOfIndividualInPopulation.get(k)) {
-						ReferencePoint p = this.mapLargest.get(l.get(i))
-								.get(a.getPositionOfMyProprietaryPoint().toString());
-						try {
-							if (!p.equals(null)) {
-								possibleSelectioned.add(a);
-							}
-						} catch (Exception e) {
-							continue;
+				// if (l.contains(k)) {// veja condicao 1: a lista de lista de individuos é
+				// estruturada conforme os
+				// objetivos
+				for (AnIndividualAndHisVector<S> a : familyOfIndividualInPopulation.get(k)) {
+					ReferencePoint p = this.mapLargest.get(l.get(i))
+							.get(a.getPositionOfMyProprietaryPoint().toString());
+					try {
+						if (!p.equals(null)) {
+							possibleSelectioned.add(a);
 						}
+					} catch (Exception e) {
+						continue;
 					}
 				}
+				// }
 
 			}
 		}

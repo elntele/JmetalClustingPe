@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.uma.jmetal.operator.SelectionOperator;
 import org.uma.jmetal.solution.Solution;
+import org.uma.jmetal.solution.impl.DefaultIntegerSolution;
 import org.uma.jmetal.util.JMetalException;
 import org.uma.jmetal.util.pseudorandom.JMetalRandom;
 import org.uma.jmetal.util.solutionattribute.SolutionAttribute;
@@ -19,6 +20,7 @@ public class EnvironmentalSelection<S extends Solution<?>> implements SelectionO
 	private List<ReferencePoint<S>> referencePoints;
 	private int numberOfObjectives;
 	private HyperplaneObsevation hpo;// add  por jorge candeias
+	private int contTeste=0;// add  por jorge candeias
 	
 	public EnvironmentalSelection(Builder<S> builder) {
 		fronts = builder.getFronts();
@@ -330,18 +332,24 @@ public class EnvironmentalSelection<S extends Solution<?>> implements SelectionO
 				
 			}
 			else
-			{	//linhas adicionadas por jorge canedeias
-				this.referencePoints.get(min_rp).addMemberToListMember(chosen);
-				//original code lines
-				this.referencePoints.get(min_rp).AddMember();
-				this.referencePoints.get(min_rp).RemovePotentialMember(chosen);
-				source.add(chosen);
-				//linhas adicionadas por jorge canedeias
-				tradeTheObservationPlane(source.size()-1, chosen, this.referencePoints.get(min_rp).pos());
+			{	
+					//linhas adicionadas por jorge canedeias
+					this.referencePoints.get(min_rp).addMemberToListMember(chosen);
+					//original code lines
+					this.referencePoints.get(min_rp).AddMember();
+					this.referencePoints.get(min_rp).RemovePotentialMember(chosen);
+					source.add(chosen);
+					//linhas adicionadas por jorge canedeias
+					this.contTeste+=1;
+				//	tradeTheObservationPlane(source.size()-1, chosen, this.referencePoints.get(min_rp).pos());
+				
 			}
 		}
+//		if (source.size()<this.solutionsToSelect||this.contTeste<this.solutionsToSelect) {
+//			System.out.println();
+//		}
 		this.hpo.setLargestReferencePointClusters(this.referencePoints);// add por jorge candeias
-		this.hpo.eQualization();// add por jorge candeias
+	//	this.hpo.eQualization();// add por jorge candeias
 		return source;
 	}
 	
@@ -350,9 +358,15 @@ public class EnvironmentalSelection<S extends Solution<?>> implements SelectionO
 	 * a alimentacao da obsevarcao do hyperplano 
 	 */
 	public void tradeTheObservationPlane(int idInPopulation, S chosen,List <Double> pos  ) {
-		AnIndividualAndHisVector<S> ind = new AnIndividualAndHisVector (chosen, pos,idInPopulation );
-		this.hpo.includeSolutionInGroupAppropriate(ind);
+		AnIndividualAndHisVector<S> ind = new AnIndividualAndHisVector ((DefaultIntegerSolution)chosen/*, pos*/,idInPopulation );
 		
+			int teste=this.hpo.includeSolutionInGroupAppropriate(ind);
+			
+		if (this.contTeste==teste) {
+			
+		}else {
+			System.out.println();
+		}
 	}
 	
 	

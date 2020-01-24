@@ -23,6 +23,7 @@ import java.util.Vector;
 import java.util.concurrent.TimeUnit;
 
 import org.uma.jmetal.algorithm.impl.AbstractGeneticAlgorithm;
+import org.uma.jmetal.algorithm.multiobjective.nsgaiii.util.AnIndividualAndHisVector;
 import org.uma.jmetal.algorithm.multiobjective.nsgaiii.util.EnvironmentalSelection;
 import org.uma.jmetal.algorithm.multiobjective.nsgaiii.util.HyperplaneObsevation;
 import org.uma.jmetal.algorithm.multiobjective.nsgaiii.util.ReferencePoint;
@@ -68,6 +69,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	protected List<ReferencePoint<S>> referencePoints = new Vector<>();
 	protected GmlData gml;
 	protected List<Pattern>[] clustters;
+	private EnvironmentalSelection envi;
 	private int LocalSeachFoundNoDominated = 0;
 	private UUID ParallelEvaluateId;
 	private PatternToGml ptg;
@@ -75,6 +77,8 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	private List<List<S>> paretos=new ArrayList<>();
 	private List<S> lastPareto;
 	private HyperplaneObsevation hp; // add por jorge candeias
+	private List <List<Integer>> indexOfIndividualSelectionedToTheSearch = new ArrayList<>();
+	private List <List<Integer>> EqualizadListe = new ArrayList<>();
 
 	/** Constructor */
 	public NSGAIII(NSGAIIIBuilder<S> builder) { // can be created from the
@@ -189,6 +193,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 		}
 
 	}
+	
 
 	@Override
 	protected List<S> evaluatePopulation(List<S> population) {
@@ -281,6 +286,8 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 		return population;
 
 	}
+	
+	
 	
 	
 	
@@ -893,8 +900,10 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 				arrayObjetiveValueUpper[i] = Double.MAX_VALUE;
 			}
 			List<Integer> re = this.hp.selectTheCandidatesTolocalsearch(this.prop);
+			this.indexOfIndividualSelectionedToTheSearch.add(re);
+			this.EqualizadListe.add(this.hp.geteQualizationList());
 			System.out.println("soluções que atende, a regra " + this.hp.getTesteSolQueAtendExecge());
-			System.out.println("soluções que não atendem  a regra " + this.hp.getTesteSolQueAtendExecge());
+			System.out.println("soluções que não atendem  a regra " + this.hp.getTesteSolQueNaoAtendExecge());
 			
 //			Integer[] arrayIndiceLower = takeNLowerSolutiox(arrayObjetiveValueUpper.clone(), population);
 //			Integer[] arrayIndiceUpper = takeNUpperSolutiox(arrayObjetiveValueLower.clone(), population,
@@ -1523,7 +1532,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	@Override
 	protected List<S> selection(List<S> population) {
 
-		if (this.prop.getProperty("modo").equals("com busca") && this.iterations >= 120) {
+		if (this.prop.getProperty("modo").equals("com busca") && this.iterations >=2) {
 			int numberNeighbors = Integer.parseInt(this.prop.getProperty("numberNeighbors"));// mudar numero de vizinhos
 																								// da busca aqui
 			if (this.prop.getProperty("modo").equals("com busca")) {
@@ -1637,8 +1646,30 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 				getReferencePointsCopy(), getProblem().getNumberOfObjectives());
 
 		pop = selection.execute(pop);
+		this.envi=selection;
 		this.hp = selection.getHpo();
+		tradeTheObservationPlane(pop);
 		return pop;
+	}
+	/**
+	 * adicionado por jorge candeias para trabalhar
+	 * a alimentacao da obsevarcao do hyperplano 
+	 */
+	public void tradeTheObservationPlane(List<S> population ) {
+		int i=0;
+		for (S s:population) {
+			AnIndividualAndHisVector<S> ind = new AnIndividualAndHisVector ((DefaultIntegerSolution)s, i );
+			int teste=this.hp.includeSolutionInGroupAppropriate(ind);
+			i+=1;
+		}
+		this.hp.eQualization();
+	}
+	
+	
+	
+
+	public List<List<Integer>> getEqualizadListe() {
+		return EqualizadListe;
 	}
 
 	@Override
@@ -1696,6 +1727,12 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 
 	public void setCont(int cont) {
 		this.cont = cont;
+	}
+	
+	
+
+	public List<List<Integer>> getIndexOfIndividualSelectionedToTheSearch() {
+		return indexOfIndividualSelectionedToTheSearch;
 	}
 
 	public void printFinalSolutionSet(List<? extends Solution<?>> population) {
