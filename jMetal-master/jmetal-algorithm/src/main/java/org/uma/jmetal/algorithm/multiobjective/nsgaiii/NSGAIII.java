@@ -129,7 +129,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	protected void updateProgress() {
 		iterations++;
 		System.out.println("numero de iteraçõs" + iterations);
-		if (this.iterations % 20 == 0) {
+		if (this.iterations % 10 == 0 || iterations==198 ||iterations==202) {
 			printFinalSolutionSet(this.population);
 		}
 	}
@@ -901,7 +901,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 			}
 			List<Integer> re = this.hp.selectTheCandidatesTolocalsearch(this.prop);
 			this.indexOfIndividualSelectionedToTheSearch.add(re);
-			this.EqualizadListe.add(this.hp.geteQualizationList());
+			
 			System.out.println("soluções que atende, a regra " + this.hp.getTesteSolQueAtendExecge());
 			System.out.println("soluções que não atendem  a regra " + this.hp.getTesteSolQueNaoAtendExecge());
 			
@@ -1532,7 +1532,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	@Override
 	protected List<S> selection(List<S> population) {
 
-		if (this.prop.getProperty("modo").equals("com busca") && this.iterations >=2) {
+		if (this.prop.getProperty("modo").equals("com busca") && this.iterations >=120) {
 			int numberNeighbors = Integer.parseInt(this.prop.getProperty("numberNeighbors"));// mudar numero de vizinhos
 																								// da busca aqui
 			if (this.prop.getProperty("modo").equals("com busca")) {
@@ -1646,9 +1646,10 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 				getReferencePointsCopy(), getProblem().getNumberOfObjectives());
 
 		pop = selection.execute(pop);
-		this.envi=selection;
-		this.hp = selection.getHpo();
-		tradeTheObservationPlane(pop);
+		this.envi=selection;// autor jorge candeias
+		this.hp = selection.getHpo();// autor jorge candeias
+		tradeTheObservationPlane(pop);// autor jorge candeias
+		this.EqualizadListe.add(this.hp.geteQualizationList());// autor jorge candeias
 		return pop;
 	}
 	/**
