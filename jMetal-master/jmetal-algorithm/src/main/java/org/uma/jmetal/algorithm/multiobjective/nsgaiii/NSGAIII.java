@@ -1648,7 +1648,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 		pop = selection.execute(pop);
 		this.envi=selection;// autor jorge candeias
 		this.hp = selection.getHpo();// autor jorge candeias
-		tradeTheObservationPlane(pop);// autor jorge candeias
+		//tradeTheObservationPlane(pop);// autor jorge candeias
 		this.EqualizadListe.add(this.hp.geteQualizationList());// autor jorge candeias
 		return pop;
 	}

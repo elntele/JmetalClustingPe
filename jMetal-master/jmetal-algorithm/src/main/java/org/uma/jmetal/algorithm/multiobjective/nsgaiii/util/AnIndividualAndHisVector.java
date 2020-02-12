@@ -38,7 +38,13 @@ public class AnIndividualAndHisVector <S> implements Comparable{
 	public void setMyGroups(int myGroups) {
 		this.myGroups = myGroups;
 	}
-
+	public AnIndividualAndHisVector(S solution, List<Double> positionOfMyProprietaryPoint,
+			int myIndexInPopulation) {
+		super();
+		this.solution = (DefaultIntegerSolution) solution;
+		this.positionOfMyProprietaryPoint = positionOfMyProprietaryPoint;
+		this.myIndexInPopulation = myIndexInPopulation;
+	}
 
 
 

@@ -330,7 +330,7 @@ public class HyperplaneObsevation<S extends Solution<?>> {
 		if (this.equalized) {
 			return r;
 		} else {
-		//	AssociateTheLargestToThefamilyOfIndividualInPopulation(prop);
+			AssociateTheLargestToThefamilyOfIndividualInPopulation(prop);
 			r = calcTheCandidates(prop);
 			return r;
 		}
@@ -347,7 +347,7 @@ public class HyperplaneObsevation<S extends Solution<?>> {
 		double poor = Double.MAX_VALUE;
 		int iRich = 0;
 		int iPoor = 0;
-/*
+
 		for (int i = 0; i < distributed.size(); i++) {
 			if (l.contains(i)) {
 				if (distributed.get(i) < poor) {
@@ -367,8 +367,9 @@ public class HyperplaneObsevation<S extends Solution<?>> {
 
 		if (iRich == iPoor) {
 			System.out.println("situação indesejada");
-		}*/
-
+		}
+		
+		/*
 		// se este metodo funcionar adeguar tudo inclisive deletando irich e ipoor
 		List<Double> sortedEQualizationList = new ArrayList<>();
 		sortedEQualizationList.addAll(this.eQualizationList);
@@ -381,27 +382,28 @@ public class HyperplaneObsevation<S extends Solution<?>> {
 				}
 			}
 		}
+		*/
 
 		List<Integer> indexOfPossibleTobefact = new ArrayList<>();
-//		// primeiro coloca-se na lista de individuos para busca os elementos
-//		// do strik ou dos maiores clustes que atenden a regra de esta no
-//		// rico e tender pro pobre.
-//		for (AnIndividualAndHisVector<S> a : this.strikeTargetGroup) {
-//			if (indexOfPossibleTobefact.size() < SolutNumber / 2) {// teste colocar o máximo do strik goup
-//				if (a.getMyGroups() == iRich) {
-//					if (a.getMyTrends() == iPoor) {
-//						indexOfPossibleTobefact.add(a.getMyIndexInPopulation());
-//						this.ListaParaTeste.add(a.getSolution());
-//						this.TesteSolQueAtendExecge+=1;
-//					}
-//				}
-//			} else {
-//				break;
-//			}
-//
-//		}
+		// primeiro coloca-se na lista de individuos para busca os elementos
+		// do strik ou dos maiores clustes que atenden a regra de esta no
+		// rico e tender pro pobre.
+		for (AnIndividualAndHisVector<S> a : this.strikeTargetGroup) {
+			if (indexOfPossibleTobefact.size() < SolutNumber / 2) {// teste colocar o máximo do strik goup
+				if (a.getMyGroups() == iRich) {
+					if (a.getMyTrends() == iPoor) {
+						indexOfPossibleTobefact.add(a.getMyIndexInPopulation());
+						this.ListaParaTeste.add(a.getSolution());
+						this.TesteSolQueAtendExecge+=1;
+					}
+				}
+			} else {
+				break;
+			}
 
-		
+		}
+
+		/*
 
 		for (int i = 0; i < this.familyOfIndividualInPopulation.size(); i++) {
 			Collections.sort(this.familyOfIndividualInPopulation.get(i));
@@ -423,8 +425,7 @@ public class HyperplaneObsevation<S extends Solution<?>> {
 
 			}
 
-		}
-		/*teste
+		} */
 //		depois, caso não tenha chegado ao menos a metade de individuos. 
 //		coloca-se a metade dos individos que estao na lista de strik 
 //		como uma unica condicao: que ele estaja em um eixo de atuação
@@ -529,17 +530,16 @@ public class HyperplaneObsevation<S extends Solution<?>> {
 			}
 		}
 
-//		while(indexOfPossibleTobefact.size()<SolutNumber) {
-//			for (int i=0;i<indexOfPossibleTobefact.size();i++) {
-//				if  (indexOfPossibleTobefact.size()<SolutNumber) {
-//					indexOfPossibleTobefact.add(indexOfPossibleTobefact.get(i));
-//				}else {
-//					break;
-//				}
-//			}
-//			
-//		}
-teste */
+		while(indexOfPossibleTobefact.size()<SolutNumber) {
+			for (int i=0;i<indexOfPossibleTobefact.size();i++) {
+				if  (indexOfPossibleTobefact.size()<SolutNumber) {
+					indexOfPossibleTobefact.add(indexOfPossibleTobefact.get(i));
+				}else {
+					break;
+				}
+			}
+			
+		}
 		if (indexOfPossibleTobefact.size()<SolutNumber) {
 			System.out.println();
 		}

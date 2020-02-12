@@ -315,6 +315,14 @@ public class EnvironmentalSelection<S extends Solution<?>> implements SelectionO
  	    normalizeObjectives(source, intercepts, ideal_point);
 		// ---------- Step 15 / Algorithm 3, Step 16 ----------
 		associate(source);
+		//** jorge para teste
+		if (this.fronts.size()>1) {// jorge para teste
+			System.out.println();
+		} 
+		if(source.size()>0) {
+			System.out.println();
+		}
+		//****************************
 
 		// ---------- Step 17 / Algorithm 4 ----------
 		while (source.size() < this.solutionsToSelect)
@@ -341,7 +349,7 @@ public class EnvironmentalSelection<S extends Solution<?>> implements SelectionO
 					source.add(chosen);
 					//linhas adicionadas por jorge canedeias
 					this.contTeste+=1;
-				//	tradeTheObservationPlane(source.size()-1, chosen, this.referencePoints.get(min_rp).pos());
+					tradeTheObservationPlane(source.size()-1, chosen, this.referencePoints.get(min_rp).pos());
 				
 			}
 		}
@@ -349,7 +357,7 @@ public class EnvironmentalSelection<S extends Solution<?>> implements SelectionO
 //			System.out.println();
 //		}
 		this.hpo.setLargestReferencePointClusters(this.referencePoints);// add por jorge candeias
-	//	this.hpo.eQualization();// add por jorge candeias
+		this.hpo.eQualization();// add por jorge candeias
 		return source;
 	}
 	
@@ -358,7 +366,7 @@ public class EnvironmentalSelection<S extends Solution<?>> implements SelectionO
 	 * a alimentacao da obsevarcao do hyperplano 
 	 */
 	public void tradeTheObservationPlane(int idInPopulation, S chosen,List <Double> pos  ) {
-		AnIndividualAndHisVector<S> ind = new AnIndividualAndHisVector ((DefaultIntegerSolution)chosen/*, pos*/,idInPopulation );
+		AnIndividualAndHisVector<S> ind = new AnIndividualAndHisVector ((DefaultIntegerSolution)chosen, pos,idInPopulation );
 		
 			int teste=this.hpo.includeSolutionInGroupAppropriate(ind);
 			
