@@ -899,7 +899,9 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 				arrayObjetiveValueLower[i] = Double.MIN_VALUE;
 				arrayObjetiveValueUpper[i] = Double.MAX_VALUE;
 			}
-			List<Integer> re = this.hp.selectTheCandidatesTolocalsearch(this.prop);
+//			List<Integer> re = this.hp.selectTheCandidatesTolocalsearch(this.prop);
+			List<Integer> re = this.hp.selectArearRichCandidatesTolocalsearch(this.prop, this.problem.getNumberOfVariables());
+			
 			this.indexOfIndividualSelectionedToTheSearch.add(re);
 			
 			System.out.println("soluções que atende, a regra " + this.hp.getTesteSolQueAtendExecge());
@@ -1650,6 +1652,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 		this.hp = selection.getHpo();// autor jorge candeias
 		tradeTheObservationPlane(pop);// autor jorge candeias
 		this.EqualizadListe.add(this.hp.geteQualizationList());// autor jorge candeias
+		//this.hp.externalAssociateTheLargestToThefamilyOfIndividualInPopulation(prop,this.problem.getNumberOfVariables());//  adicioinado patra teste jorge candeias
 		return pop;
 	}
 	/**
