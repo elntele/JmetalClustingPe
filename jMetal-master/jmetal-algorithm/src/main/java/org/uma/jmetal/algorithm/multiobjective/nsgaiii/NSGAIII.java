@@ -899,8 +899,8 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 				arrayObjetiveValueLower[i] = Double.MIN_VALUE;
 				arrayObjetiveValueUpper[i] = Double.MAX_VALUE;
 			}
-//			List<Integer> re = this.hp.selectTheCandidatesTolocalsearch(this.prop);
-			List<Integer> re = this.hp.selectArearRichCandidatesTolocalsearch(this.prop, this.problem.getNumberOfVariables());
+			List<Integer> re = this.hp.selectTheCandidatesTolocalsearch(this.prop);
+//			List<Integer> re = this.hp.selectArearRichCandidatesTolocalsearch(this.prop, this.problem.getNumberOfVariables());
 			
 			this.indexOfIndividualSelectionedToTheSearch.add(re);
 			
