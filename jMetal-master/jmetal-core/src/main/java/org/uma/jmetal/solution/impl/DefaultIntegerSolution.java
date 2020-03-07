@@ -81,6 +81,7 @@ public class DefaultIntegerSolution
   
   private void initializeIntegerVariables() {
     for (int i = 0 ; i < problem.getNumberOfVariables(); i++) {
+    	
       Integer value = randomGenerator.nextInt(getLowerBound(i), getUpperBound(i));
       setVariableValue(i, value) ;
     }

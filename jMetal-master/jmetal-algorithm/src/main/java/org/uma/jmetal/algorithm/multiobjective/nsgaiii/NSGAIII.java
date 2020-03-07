@@ -1530,9 +1530,86 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 
 		return copySolution;
 	}
+	
+	/**
+	 * metodo criado para equalizar a populacao...
+	 * Foi chamado de universidade porque, apesar de ser um operador de 
+	 * crossOver, a ideia é de que seja um operador memetico no qual um individuo
+	 * desenvolva suas habilidades durante sua vida. dessa forma
+	 * nada melhor pra ensinar a um individuo novas habilidades do que uma faculdade.
+	 * O objetivo é colocar, como "professores", individuos raros. E colocar, como
+	 * "alunos", individuos comuns que tenham "tendencia" (Segundo melhor valor de 
+	 * objetivo) do mesmo tipo do primeiro melhor do professor.
+	 * apos o crossOver ha uma chance desse individuo "aluno" se caracterizar 
+	 * como o do professor.
+	 * se a nova solucao dominar o "aluno"  ou que pelo menos ambos sejam não 
+	 * dominados havera uma substituição. 
+	 */
+	public void universityGraduate(List<S> population) {
+		List <Integer> indexOfProfessors =new ArrayList();
+		
+		
+		int indexOfProfessor = this.hp.getTheProfessor();
+		
+		List <Integer> indexofstudents=this.hp.getTheStudent(this.getProblem().getNumberOfObjectives(), indexOfProfessor);
+		
+			
+			
+			for (int i=0;i<indexofstudents.size();i++) {
+				List<S> listIndivAtEndSemester = new ArrayList<>(2);
+				listIndivAtEndSemester.add(population.get(indexOfProfessor));
+				listIndivAtEndSemester.add(population.get((int) indexofstudents.get(i)));
+				List<S> trainee=crossoverOperator.execute(listIndivAtEndSemester);
+				mutationOperator.execute(trainee.get(0));
+				mutationOperator.execute(trainee.get(1));
+				this.evaluatePopulation(trainee);
+				
+				/**
+				 * compara duas soluções e retorna: -1 se s1 domina s2 0 se s1 e s2 são não
+				 * dominadas 1 se s2 domina s1
+				 * 
+				 * @param solutio1 e solution2
+				 */
+				switch (coparation((IntegerSolution) population.get((int) indexofstudents.get(i)),(IntegerSolution)trainee.get(0))) {
+				case -1:
+					
+					break;
+				case 0:
+					population.set((int) indexofstudents.get(i),trainee.get(1));
+					break;
+				case 1:
+					population.set((int) indexofstudents.get(i),trainee.get(1));
+					break;
+				default:
+					System.out.println("deu falha no compara do universit");
+					break;
+				}
+				
+//				switch (coparation((IntegerSolution) population.get((int) indexofstudents.get(i)),(IntegerSolution)trainee.get(1))) {
+//				case -1:
+//					
+//					break;
+//				case 0:
+//					population.set((int) indexofstudents.get(i),trainee.get(1));
+//					break;
+//				case 1:
+//					population.set((int) indexofstudents.get(i),trainee.get(1));
+//					break;
+//				default:
+//					System.out.println("deu falha no compara do universit");
+//					break;
+//				}
+			}
+			
+
+		
+	}
 
 	@Override
 	protected List<S> selection(List<S> population) {
+//		if (this.iterations<120 &&this.iterations>=2) {
+//			this.universityGraduate(population);
+//		}
 
 		if (this.prop.getProperty("modo").equals("com busca") && this.iterations >=120) {
 			int numberNeighbors = Integer.parseInt(this.prop.getProperty("numberNeighbors"));// mudar numero de vizinhos

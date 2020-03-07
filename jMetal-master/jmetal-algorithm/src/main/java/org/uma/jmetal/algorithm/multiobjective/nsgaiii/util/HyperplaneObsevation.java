@@ -9,6 +9,7 @@ import java.util.Properties;
 import java.util.Random;
 
 import org.apache.commons.math3.stat.descriptive.moment.Variance;
+import org.uma.jmetal.algorithm.impl.AbstractCoralReefsOptimization.Coordinate;
 import org.uma.jmetal.solution.IntegerSolution;
 import org.uma.jmetal.solution.Solution;
 import org.uma.jmetal.solution.impl.DefaultIntegerSolution;
@@ -23,7 +24,7 @@ import org.uma.jmetal.solution.impl.DefaultIntegerSolution;
 
 public class HyperplaneObsevation<S extends Solution<?>> {
 	// for n objectives, n lists in this list of list
-	private List<List<AnIndividualAndHisVector<S>>> familyOfIndividualInPopulation=new ArrayList<>();
+	private List<List<AnIndividualAndHisVector<S>>> familyOfIndividualInPopulation = new ArrayList<>();
 	private List<ReferencePoint> AllRefencePoints;
 	private List<List<ReferencePoint>> LargestReferencePointClusters;
 	private int numberOfObjectives;
@@ -37,6 +38,8 @@ public class HyperplaneObsevation<S extends Solution<?>> {
 	private List<DefaultIntegerSolution> ListaParaTeste = new ArrayList<>();
 	private int TesteSolQueAtendExecge = 0;
 	private int TesteSolQueNaoAtendExecge = 0;
+	private List<Integer> poorToRich;
+	private List<Integer> richToPoor;
 
 	public HyperplaneObsevation(int numberOfObjectives) {
 		this.numberOfObjectives = numberOfObjectives;
@@ -61,25 +64,25 @@ public class HyperplaneObsevation<S extends Solution<?>> {
 		return ListaParaTeste;
 	}
 
-	public int includeSolutionInGroupAppropriate(AnIndividualAndHisVector <S> ind) {
+	public int includeSolutionInGroupAppropriate(AnIndividualAndHisVector<S> ind) {
 		List<Double> d = getAttribute(ind.getSolution());
 		int mG = myGroup(d);
 		ind.setMyGroups(mG);
 		setTheIndividualTrend(d, ind);
-		if (mG >= 4 || mG<0) {
+		if (mG >= 4 || mG < 0) {
 			System.out.println("index de grupo indesejado");
 		}
-			int antes=this.familyOfIndividualInPopulation.get(mG).size();
-			this.familyOfIndividualInPopulation.get(mG).add((AnIndividualAndHisVector <S>)ind);
-			int depois=this.familyOfIndividualInPopulation.get(mG).size();
-			if (antes==depois) {
-				System.out.println();
-			}
-			int testeRetorno=0;
-			for (int i=0;i<this.familyOfIndividualInPopulation.size();i++) {
-				testeRetorno+=this.familyOfIndividualInPopulation.get(i).size();
-			}
-			return testeRetorno;
+		int antes = this.familyOfIndividualInPopulation.get(mG).size();
+		this.familyOfIndividualInPopulation.get(mG).add((AnIndividualAndHisVector<S>) ind);
+		int depois = this.familyOfIndividualInPopulation.get(mG).size();
+		if (antes == depois) {
+			System.out.println();
+		}
+		int testeRetorno = 0;
+		for (int i = 0; i < this.familyOfIndividualInPopulation.size(); i++) {
+			testeRetorno += this.familyOfIndividualInPopulation.get(i).size();
+		}
+		return testeRetorno;
 	}
 
 	public void setSearchTypeS(Properties prop) {
@@ -206,8 +209,6 @@ public class HyperplaneObsevation<S extends Solution<?>> {
 	public List getLargestReferencePointClusters() {
 		return LargestReferencePointClusters;
 	}
-	
-	
 
 	public List<Double> geteQualizationList() {
 		return eQualizationList;
@@ -262,12 +263,12 @@ public class HyperplaneObsevation<S extends Solution<?>> {
 
 	}
 
-
 	public List<List<AnIndividualAndHisVector<S>>> getFamilyOfIndividualInPopulation() {
 		return familyOfIndividualInPopulation;
 	}
 
-	public void setFamilyOfIndividualInPopulation(List<List<AnIndividualAndHisVector<S>>> familyOfIndividualInPopulation) {
+	public void setFamilyOfIndividualInPopulation(
+			List<List<AnIndividualAndHisVector<S>>> familyOfIndividualInPopulation) {
 		this.familyOfIndividualInPopulation = familyOfIndividualInPopulation;
 	}
 
@@ -326,18 +327,128 @@ public class HyperplaneObsevation<S extends Solution<?>> {
 		this.seachType = seachType;
 	}
 
+	public void poorToRichCalc() {
+		List<Double> sortedEQualizationList = new ArrayList<>();
+		sortedEQualizationList.addAll(this.eQualizationList);
+		Collections.sort(sortedEQualizationList);
+		List<Integer> poorToRich = new ArrayList<>();
+		for (Double d : sortedEQualizationList) {
+			for (int i = 0; i < this.eQualizationList.size(); i++) {
+				if (d == this.eQualizationList.get(i)) {
+					poorToRich.add(i);
+				}
+			}
+		}
+		this.poorToRich = poorToRich;
+	}
+
+	public void richToPoorCalc() {
+		List<Double> reversedEQualizationList = new ArrayList<>();
+		reversedEQualizationList.addAll(this.eQualizationList);
+		Collections.sort(reversedEQualizationList);
+		Collections.reverse(reversedEQualizationList);
+		List<Integer> richToPoor = new ArrayList<>();
+		for (Double d : reversedEQualizationList) {
+			for (int i = 0; i < this.eQualizationList.size(); i++) {
+				if (d == this.eQualizationList.get(i)) {
+					richToPoor.add(i);
+				}
+			}
+		}
+		this.richToPoor = richToPoor;
+	}
+
+	public List<Integer> getTheProfessors(int numberofProfessors) {
+		List<Integer> indexList = new ArrayList<>();
+		poorToRichCalc();
+
+		for (List<AnIndividualAndHisVector<S>> l : this.familyOfIndividualInPopulation) {
+			Collections.sort(l);
+		}
+
+		for (Integer i : this.poorToRich) {
+			for (AnIndividualAndHisVector<S> a : this.familyOfIndividualInPopulation.get(i)) {
+				if (indexList.size() >= numberofProfessors) {
+					break;
+				}
+				indexList.add(a.getMyIndexInPopulation());
+			}
+		}
+		return indexList;
+	}
+	public int getTheProfessor() {
+		int indexList =0;
+		poorToRichCalc();
+
+		for (List<AnIndividualAndHisVector<S>> l : this.familyOfIndividualInPopulation) {
+			Collections.sort(l);
+		}
+
+	For1:	for (Integer i : this.poorToRich) {
+			for (AnIndividualAndHisVector<S> a : this.familyOfIndividualInPopulation.get(i)) {
+				if (indexList >= 1) {
+					break For1;
+				}
+				indexList=a.getMyIndexInPopulation();
+			}
+		}
+		return indexList;
+	}
+
+	public List<Integer> getTheStudent(int numberofStudent, int indexOfMyProfessor) {
+		int groupOfMyProfessor=0;
+	for1:	for (Integer i : this.poorToRich) {
+			for (AnIndividualAndHisVector<S> a : this.familyOfIndividualInPopulation.get(i)) {
+				if (a.getMyIndexInPopulation()==indexOfMyProfessor) {
+					groupOfMyProfessor=a.getMyGroups();
+					break for1;
+				}
+				
+			}
+		}
+		
+		List<Integer> indexList = new ArrayList<>();
+		richToPoorCalc();
+
+		for (List<AnIndividualAndHisVector<S>> l : this.familyOfIndividualInPopulation) {
+			Collections.shuffle(l);
+		}
+
+For2:		for (Integer i : this.richToPoor) {
+			for (AnIndividualAndHisVector<S> a : this.familyOfIndividualInPopulation.get(i)) {
+				if (indexList.size() >= numberofStudent) {
+					break For2;
+				}
+				if (a.getMyTrends() == groupOfMyProfessor) {
+					indexList.add(a.getMyIndexInPopulation());
+				}
+
+			}
+		}
+		if (indexList.size() > numberofStudent) {
+			for (int i = 0; i < numberofStudent; i++) {
+				if (indexList.size() >= numberofStudent) {
+					break;
+				}
+				Collections.shuffle(this.familyOfIndividualInPopulation.get(this.richToPoor.get(0)));
+				indexList.add(this.familyOfIndividualInPopulation.get(this.richToPoor.get(0)).get(0)
+						.getMyIndexInPopulation());
+			}
+		}
+		return indexList;
+	}
+
 	public List<Integer> selectTheCandidatesTolocalsearch(Properties prop) {
 		List<Integer> r = new ArrayList<>();
 		if (this.equalized) {
 			return r;
 		} else {
-		//	AssociateTheLargestToThefamilyOfIndividualInPopulation(prop);
+			// AssociateTheLargestToThefamilyOfIndividualInPopulation(prop);
 			r = calcTheCandidates(prop);
 			return r;
 		}
 
 	}
-	
 
 	public List<Integer> calcTheCandidates(Properties prop) {
 		int SolutNumber = Integer.parseInt(prop.getProperty("nIndividuosToSearch"));
@@ -349,27 +460,16 @@ public class HyperplaneObsevation<S extends Solution<?>> {
 		double poor = Double.MAX_VALUE;
 		int iRich = 0;
 		int iPoor = 0;
-/*
-		for (int i = 0; i < distributed.size(); i++) {
-			if (l.contains(i)) {
-				if (distributed.get(i) < poor) {
-					poor = distributed.get(i);
-					iPoor = i;
-				} else if (distributed.get(i) == poor) {
-					iPoor = gerator.nextInt((i - iPoor) + 1) + iPoor;// gambiarra que sorteia entre i e iPoor
-				}
-				if (distributed.get(i) > rich) {
-					rich = distributed.get(i);
-					iRich = i;
-				} else if (distributed.get(i) == rich) {
-					iRich = gerator.nextInt((i - iRich) + 1) + iRich;
-				}
-			}
-		}
-
-		if (iRich == iPoor) {
-			System.out.println("situação indesejada");
-		}*/
+		/*
+		 * for (int i = 0; i < distributed.size(); i++) { if (l.contains(i)) { if
+		 * (distributed.get(i) < poor) { poor = distributed.get(i); iPoor = i; } else if
+		 * (distributed.get(i) == poor) { iPoor = gerator.nextInt((i - iPoor) + 1) +
+		 * iPoor;// gambiarra que sorteia entre i e iPoor } if (distributed.get(i) >
+		 * rich) { rich = distributed.get(i); iRich = i; } else if (distributed.get(i)
+		 * == rich) { iRich = gerator.nextInt((i - iRich) + 1) + iRich; } } }
+		 * 
+		 * if (iRich == iPoor) { System.out.println("situação indesejada"); }
+		 */
 
 		// se este metodo funcionar adeguar tudo inclisive deletando irich e ipoor
 		List<Double> sortedEQualizationList = new ArrayList<>();
@@ -403,15 +503,16 @@ public class HyperplaneObsevation<S extends Solution<?>> {
 //
 //		}
 
-		
-
 		for (int i = 0; i < this.familyOfIndividualInPopulation.size(); i++) {
-			Collections.sort(this.familyOfIndividualInPopulation.get(i));
+			Collections.shuffle(this.familyOfIndividualInPopulation.get(i));// teste embaralhamento
+			// Collections.sort(this.familyOfIndividualInPopulation.get(i));
 		}
-		//coloca se os individuos estão nas areas mais pobre primeiro depois nas areas mais ricas
-		// as listas de listas de familyOfIndividualInPopulation ja foi ordenada no 
-		// loop for acima, então o for abaixo ja coloca os indivíduos de menores objetivos 
-		// de cada area 
+		// coloca se os individuos estão nas areas mais pobre primeiro depois nas areas
+		// mais ricas
+		// as listas de listas de familyOfIndividualInPopulation ja foi ordenada no
+		// loop for acima, então o for abaixo ja coloca os indivíduos de menores
+		// objetivos
+		// de cada area
 		for (Integer index : poorToRich) {
 			for (AnIndividualAndHisVector<S> a : this.familyOfIndividualInPopulation.get(index)) {
 				if (indexOfPossibleTobefact.size() < SolutNumber) {// teste colocar o máximo do strik goup
@@ -426,129 +527,92 @@ public class HyperplaneObsevation<S extends Solution<?>> {
 			}
 
 		}
-		/*teste
-//		depois, caso não tenha chegado ao menos a metade de individuos. 
-//		coloca-se a metade dos individos que estao na lista de strik 
-//		como uma unica condicao: que ele estaja em um eixo de atuação
-//		da busca, inclusive essa questao de ter que pertencer a um
-//		eixo afetado pela busca ja foi tratada no preenchimento da lista
-//		strikeTargetGroup.
-		if (indexOfPossibleTobefact.size() < (SolutNumber / 2)) {// teste colocar o máximo do strik goup
-			for (AnIndividualAndHisVector<S> a : this.strikeTargetGroup) {
-				if (a.getMyGroups() == iRich) {
-
-					indexOfPossibleTobefact.add(a.getMyIndexInPopulation());
-					this.ListaParaTeste.add(a.getSolution());
-					this.TesteSolQueNaoAtendExecge += 1;
-					if (indexOfPossibleTobefact.size() >= (SolutNumber / 2)) {
-						break;
-					}
-
-				}
-			}
-		}
-		
-//		 teste teste colocar o máximo do strik goup
-//		a partir de agora serão colocados mebros da area rica, acontece que nem sempre 
-//		os maiores clusteres estão na area rica, então eh preciso dividir os eleitos pra
-//		busca entre esses dois grupos: individous que estao nos clusters grande e individuos
-//		que estao na area rica sem esta em cluster grande.
-//		esses individuos da area rica, por enquato, são selecionado tendo tendencia 
-//		para area pobre
-
-		// rotulando loops: novidade :D
+		/*
+		 * teste // depois, caso não tenha chegado ao menos a metade de individuos. //
+		 * coloca-se a metade dos individos que estao na lista de strik // como uma
+		 * unica condicao: que ele estaja em um eixo de atuação // da busca, inclusive
+		 * essa questao de ter que pertencer a um // eixo afetado pela busca ja foi
+		 * tratada no preenchimento da lista // strikeTargetGroup. if
+		 * (indexOfPossibleTobefact.size() < (SolutNumber / 2)) {// teste colocar o
+		 * máximo do strik goup for (AnIndividualAndHisVector<S> a :
+		 * this.strikeTargetGroup) { if (a.getMyGroups() == iRich) {
+		 * 
+		 * indexOfPossibleTobefact.add(a.getMyIndexInPopulation());
+		 * this.ListaParaTeste.add(a.getSolution()); this.TesteSolQueNaoAtendExecge +=
+		 * 1; if (indexOfPossibleTobefact.size() >= (SolutNumber / 2)) { break; }
+		 * 
+		 * } } }
+		 * 
+		 * // teste teste colocar o máximo do strik goup // a partir de agora serão
+		 * colocados mebros da area rica, acontece que nem sempre // os maiores
+		 * clusteres estão na area rica, então eh preciso dividir os eleitos pra //
+		 * busca entre esses dois grupos: individous que estao nos clusters grande e
+		 * individuos // que estao na area rica sem esta em cluster grande. // esses
+		 * individuos da area rica, por enquato, são selecionado tendo tendencia // para
+		 * area pobre
+		 * 
+		 * // rotulando loops: novidade :D if (indexOfPossibleTobefact.size() <
+		 * SolutNumber) { for1: for (int i = 0; i < l.size(); i++) {// i representa o
+		 * objetivo que a busca interfere for (int k = 0; k <
+		 * this.familyOfIndividualInPopulation.size(); k++) {// k a o indice da lista de
+		 * listas // de // individuos if (l.contains(k)) {// veja condicao 1: a lista de
+		 * lista de individuos é estruturada conforme os // objetivos for
+		 * (AnIndividualAndHisVector<S> a : familyOfIndividualInPopulation.get(k)) { if
+		 * (a.getMyGroups() == iRich && a.getMyTrends() == iPoor) { if
+		 * (!(indexOfPossibleTobefact.contains(a.getMyIndexInPopulation()))) { if
+		 * (indexOfPossibleTobefact.size() < SolutNumber) {
+		 * indexOfPossibleTobefact.add(a.getMyIndexInPopulation());
+		 * this.ListaParaTeste.add(a.getSolution()); this.TesteSolQueAtendExecge += 1; }
+		 * else { break for1; }
+		 * 
+		 * } } }
+		 * 
+		 * }
+		 * 
+		 * } } } // se ainda assim a lista nao tiver o numero requido de solucoes // vai
+		 * adicionando da area rica ate que complete
+		 * 
+		 * if (indexOfPossibleTobefact.size() < SolutNumber) {
+		 * 
+		 * // preenche o restante da lista com os mais ricos com a unica // restricao de
+		 * nao ser repetido List<Integer> rl = new ArrayList<>(); List<Integer> oldr =
+		 * new ArrayList<>(); rl.add(iRich); while (indexOfPossibleTobefact.size() <
+		 * SolutNumber) {
+		 * 
+		 * for2: for (int g = 0; g < this.familyOfIndividualInPopulation.size(); g++) {
+		 * if (g == rl.get(0) && !oldr.contains(g)) { for (int i = 0; i <
+		 * this.familyOfIndividualInPopulation.get(g).size(); i++) { if
+		 * (indexOfPossibleTobefact.size() < SolutNumber) { if
+		 * (!(indexOfPossibleTobefact.contains(
+		 * this.familyOfIndividualInPopulation.get(g).get(i).getMyIndexInPopulation())))
+		 * { indexOfPossibleTobefact.add(
+		 * this.familyOfIndividualInPopulation.get(g).get(i).getMyIndexInPopulation());
+		 * this.ListaParaTeste
+		 * .add(this.familyOfIndividualInPopulation.get(g).get(i).getSolution());
+		 * this.TesteSolQueNaoAtendExecge += 1; } } else { break for2; }
+		 * 
+		 * }
+		 * 
+		 * }
+		 * 
+		 * } oldr.add(rl.get(0)); rl.remove(rl.get(0)); rich = -1.0; iRich = 0; for (int
+		 * j = 0; j < distributed.size(); j++) { if (distributed.get(j) > rich &&
+		 * !oldr.contains(j) && l.contains(j)) { rich = distributed.get(j); iRich = j; }
+		 * 
+		 * } } }
+		 * 
+		 * // while(indexOfPossibleTobefact.size()<SolutNumber) { // for (int
+		 * i=0;i<indexOfPossibleTobefact.size();i++) { // if
+		 * (indexOfPossibleTobefact.size()<SolutNumber) { //
+		 * indexOfPossibleTobefact.add(indexOfPossibleTobefact.get(i)); // }else { //
+		 * break; // } // } // // } teste
+		 */
 		if (indexOfPossibleTobefact.size() < SolutNumber) {
-			for1: for (int i = 0; i < l.size(); i++) {// i representa o objetivo que a busca interfere
-				for (int k = 0; k < this.familyOfIndividualInPopulation.size(); k++) {// k a o indice da lista de listas
-																						// de
-																						// individuos
-					if (l.contains(k)) {// veja condicao 1: a lista de lista de individuos é estruturada conforme os
-										// objetivos
-						for (AnIndividualAndHisVector<S> a : familyOfIndividualInPopulation.get(k)) {
-							if (a.getMyGroups() == iRich && a.getMyTrends() == iPoor) {
-								if (!(indexOfPossibleTobefact.contains(a.getMyIndexInPopulation()))) {
-									if (indexOfPossibleTobefact.size() < SolutNumber) {
-										indexOfPossibleTobefact.add(a.getMyIndexInPopulation());
-										this.ListaParaTeste.add(a.getSolution());
-										this.TesteSolQueAtendExecge += 1;
-									} else {
-										break for1;
-									}
-
-								}
-							}
-						}
-
-					}
-
-				}
-			}
-		}
-//		se ainda assim a lista nao tiver o numero requido de solucoes
-//		vai adicionando da area rica ate que complete
-
-		if (indexOfPossibleTobefact.size() < SolutNumber) {
-
-//		    preenche o restante da lista com os mais ricos com a unica 
-//		    restricao de nao  ser repetido
-			List<Integer> rl = new ArrayList<>();
-			List<Integer> oldr = new ArrayList<>();
-			rl.add(iRich);
-			while (indexOfPossibleTobefact.size() < SolutNumber) {
-
-				for2: for (int g = 0; g < this.familyOfIndividualInPopulation.size(); g++) {
-					if (g == rl.get(0) && !oldr.contains(g)) {
-						for (int i = 0; i < this.familyOfIndividualInPopulation.get(g).size(); i++) {
-							if (indexOfPossibleTobefact.size() < SolutNumber) {
-								if (!(indexOfPossibleTobefact.contains(
-										this.familyOfIndividualInPopulation.get(g).get(i).getMyIndexInPopulation()))) {
-									indexOfPossibleTobefact.add(
-											this.familyOfIndividualInPopulation.get(g).get(i).getMyIndexInPopulation());
-									this.ListaParaTeste
-											.add(this.familyOfIndividualInPopulation.get(g).get(i).getSolution());
-									this.TesteSolQueNaoAtendExecge += 1;
-								}
-							} else {
-								break for2;
-							}
-
-						}
-
-					}
-
-				}
-				oldr.add(rl.get(0));
-				rl.remove(rl.get(0));
-				rich = -1.0;
-				iRich = 0;
-				for (int j = 0; j < distributed.size(); j++) {
-					if (distributed.get(j) > rich && !oldr.contains(j) && l.contains(j)) {
-						rich = distributed.get(j);
-						iRich = j;
-					}
-
-				}
-			}
-		}
-
-//		while(indexOfPossibleTobefact.size()<SolutNumber) {
-//			for (int i=0;i<indexOfPossibleTobefact.size();i++) {
-//				if  (indexOfPossibleTobefact.size()<SolutNumber) {
-//					indexOfPossibleTobefact.add(indexOfPossibleTobefact.get(i));
-//				}else {
-//					break;
-//				}
-//			}
-//			
-//		}
-teste */
-		if (indexOfPossibleTobefact.size()<SolutNumber) {
 			System.out.println();
 		}
 		return indexOfPossibleTobefact;
 	}
-	
-	
+
 	public List<Integer> selectArearRichCandidatesTolocalsearch(Properties prop, int numberOfVariables) {
 		List<Integer> r = new ArrayList<>();
 		if (this.equalized) {
@@ -562,11 +626,11 @@ teste */
 	}
 
 	/**
-	 * este metodo eh uma segunda tentativa do modelo area rica com tendencia 
-	 * a area pobre a diferença é que a população agora esta sendo observada de 
-	 * fora da classe enviropimentalSelection (dentro da classe nsga 3) parece que 
-	 * quando se observa de dentro dá em resultados péssimos, precisa-se investigar 
-	 * isso.
+	 * este metodo eh uma segunda tentativa do modelo area rica com tendencia a area
+	 * pobre a diferença é que a população agora esta sendo observada de fora da
+	 * classe enviropimentalSelection (dentro da classe nsga 3) parece que quando se
+	 * observa de dentro dá em resultados péssimos, precisa-se investigar isso.
+	 * 
 	 * @param prop
 	 * @return
 	 */
@@ -602,8 +666,6 @@ teste */
 			System.out.println("situação indesejada");
 		}
 
-	
-
 		List<Integer> indexOfPossibleTobefact = new ArrayList<>();
 //		// primeiro coloca-se na lista de individuos para busca os elementos
 //		// do strik ou dos maiores clustes que atenden a regra de esta no
@@ -614,7 +676,7 @@ teste */
 					if (a.getMyTrends() == iPoor) {
 						indexOfPossibleTobefact.add(a.getMyIndexInPopulation());
 						this.ListaParaTeste.add(a.getSolution());
-						this.TesteSolQueAtendExecge+=1;
+						this.TesteSolQueAtendExecge += 1;
 					}
 				}
 			} else {
@@ -623,9 +685,6 @@ teste */
 
 		}
 
-		
-
-	
 //		depois, caso não tenha chegado ao menos a metade de individuos. 
 //		coloca-se a metade dos individos que estao na lista de strik 
 //		como uma unica condicao: que ele estaja em um eixo de atuação
@@ -646,7 +705,7 @@ teste */
 				}
 			}
 		}
-		
+
 //		 teste teste colocar o máximo do strik goup
 //		a partir de agora serão colocados mebros da area rica, acontece que nem sempre 
 //		os maiores clusteres estão na area rica, então eh preciso dividir os eleitos pra
@@ -741,12 +800,11 @@ teste */
 //			
 //		}
 
-		if (indexOfPossibleTobefact.size()<SolutNumber) {
+		if (indexOfPossibleTobefact.size() < SolutNumber) {
 			System.out.println();
 		}
 		return indexOfPossibleTobefact;
 	}
-
 
 	public void AssociateTheLargestToThefamilyOfIndividualInPopulation(Properties prop) {
 		setSearchTypeS(prop);// setando a lista de tipos de vetores da busca local
@@ -784,7 +842,7 @@ teste */
 		this.strikeTargetGroup = possibleSelectioned;
 
 	}
-	
+
 	public void externalAssociateTheLargestToThefamilyOfIndividualInPopulation(Properties prop, int numberOfVariables) {
 		setSearchTypeS(prop);// setando a lista de tipos de vetores da busca local
 		List<AnIndividualAndHisVector> possibleSelectioned = new ArrayList<>();
@@ -795,43 +853,41 @@ teste */
 		// interessa entrar nas posicoes 1 e 2 de mapLargest a qual vamos
 		// causar excitacoes em algum membro entre os seus references points
 		List<Integer> l = this.seachType.get(ls);
-		
-		
+
 		for (int i = 0; i < l.size(); i++) {
-			//List <AnIndividualAndHisVector<S>> iList=this.familyOfIndividualInPopulation.get(l.get(i));
-			
+			// List <AnIndividualAndHisVector<S>>
+			// iList=this.familyOfIndividualInPopulation.get(l.get(i));
+
 			for (AnIndividualAndHisVector<S> a : familyOfIndividualInPopulation.get(l.get(i))) {
 				for (ReferencePoint p : this.LargestReferencePointClusters.get(l.get(i))) {
-					for (Object s:p.getMemberList()) {
-						s=(IntegerSolution)s;
-					boolean teste=	containsTheIndividualInGroup((IntegerSolution)a.getSolution(),(IntegerSolution)s);
+					for (Object s : p.getMemberList()) {
+						s = (IntegerSolution) s;
+						boolean teste = containsTheIndividualInGroup((IntegerSolution) a.getSolution(),
+								(IntegerSolution) s);
 						if (teste) {
 							possibleSelectioned.add(a);
 						}
 					}
 				}
 			}
-			
-			
-		}
-		
 
+		}
 
 		this.strikeTargetGroup = possibleSelectioned;
 
 	}
-	
-	//parei aqui
-	/*List<DefaultIntegerSolution> pReturned,
-	List<S> population*/
-	public boolean containsTheIndividualInGroup (IntegerSolution s1,IntegerSolution s2) {
-		DefaultIntegerSolution d1=(DefaultIntegerSolution)s1;
-		DefaultIntegerSolution d2=(DefaultIntegerSolution)s2;
-		boolean a =d1.getvariables().equals(d2.getvariables());
-		boolean b=d1.getLineColumn().equals(d2.getLineColumn());
-		return (a&&b);
-		
-	}
 
+	// parei aqui
+	/*
+	 * List<DefaultIntegerSolution> pReturned, List<S> population
+	 */
+	public boolean containsTheIndividualInGroup(IntegerSolution s1, IntegerSolution s2) {
+		DefaultIntegerSolution d1 = (DefaultIntegerSolution) s1;
+		DefaultIntegerSolution d2 = (DefaultIntegerSolution) s2;
+		boolean a = d1.getvariables().equals(d2.getvariables());
+		boolean b = d1.getLineColumn().equals(d2.getLineColumn());
+		return (a && b);
+
+	}
 
 }

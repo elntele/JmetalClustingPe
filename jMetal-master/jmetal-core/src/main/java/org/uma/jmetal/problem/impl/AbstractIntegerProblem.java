@@ -10,8 +10,8 @@ import java.util.List;
 public abstract class AbstractIntegerProblem extends AbstractGenericProblem<IntegerSolution>
   implements IntegerProblem {
 
-  private List<Integer> lowerLimit ;
-  private List<Integer> upperLimit ;
+  protected List<Integer> lowerLimit ;
+  protected List<Integer> upperLimit ;
 
   /* Getters */
 	@Override
