@@ -4,9 +4,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
@@ -747,6 +745,48 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 
 		return arrayIndiceUpper;
 	}
+	
+	/**
+	 * metodo criado para acrescetar ou retirar link a duas 
+	 * cidades, complementando a busca local
+	 * 
+	 */
+	public DefaultIntegerSolution putRemoveEdge(DefaultIntegerSolution s2) {
+		
+		Random gerator = new Random();
+		int cit1 =0;
+		int cit2 =0;
+		int numberOfCities= s2.getLineColumn().length;
+		while (cit1==cit2) {
+			 cit1= gerator.nextInt((numberOfCities - 1) + 1) + 1;
+			 cit2= gerator.nextInt((numberOfCities - 1) + 1) + 1;	
+			
+		}
+		int matrixLine=Math.min(cit1, cit2);
+		int matrixCollumn=Math.max(cit1, cit2);
+		 int chromosomePosition =0;
+		 int collumn= matrixCollumn-1;
+		 int offset=matrixLine;
+		 for (int i=1; i<matrixLine; i++) {
+			 chromosomePosition+= numberOfCities-i;
+		 }
+		 chromosomePosition+=matrixCollumn-offset;
+		int decision=gerator.nextInt(101);
+		if (/*decision>50*/ true) {
+			
+			int currently =s2.getVariableValue(chromosomePosition-1);
+			if (currently==0) {
+				System.out.println("link acrescentado");
+				s2.setVariableValue(chromosomePosition-1, 1);
+			}else {
+				System.out.println("link remov1do");
+				s2.setVariableValue(chromosomePosition-1, 0);
+			}
+		}
+		return s2;
+	}
+	
+	
 // quando era 8 individuos pior e melhor
 //	/**
 //	 * operador de busca local metodo 1
@@ -972,6 +1012,9 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 					System.out.println("Solução top indice " + i);
 					IntegerSolution s2 = (changeMatrixElement((IntegerSolution) population.get(i).copy(),
 							numberNeighbors));// muda
+					// colocar a nova abordagem da busca local aqui
+					s2=putRemoveEdge((DefaultIntegerSolution) s2);
+					
 					this.problem.evaluate((S) s2);
 
 					switch (coparation((IntegerSolution) population.get(i), s2)) {
@@ -1014,6 +1057,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 					System.out.println("Solução da escolha randomica indice " + i);
 					IntegerSolution s2 = (changeMatrixElement((IntegerSolution) population.get(i).copy(),
 							numberNeighbors));// muda
+					s2=putRemoveEdge((DefaultIntegerSolution) s2);
 					this.problem.evaluate((S) s2);
 
 					switch (coparation((IntegerSolution) population.get(i), s2)) {
