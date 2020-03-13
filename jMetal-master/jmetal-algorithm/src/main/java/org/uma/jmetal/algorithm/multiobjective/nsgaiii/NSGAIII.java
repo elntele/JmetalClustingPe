@@ -746,6 +746,46 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 		return arrayIndiceUpper;
 	}
 	
+//	/**
+//	 * metodo criado para acrescetar ou retirar link a duas 
+//	 * cidades, complementando a busca local
+//	 * 
+//	 */
+//	public DefaultIntegerSolution putRemoveEdge(DefaultIntegerSolution s2) {
+//		
+//		Random gerator = new Random();
+//		int cit1 =0;
+//		int cit2 =0;
+//		int numberOfCities= s2.getLineColumn().length;
+//		while (cit1==cit2) {
+//			 cit1= gerator.nextInt((numberOfCities - 1) + 1) + 1;
+//			 cit2= gerator.nextInt((numberOfCities - 1) + 1) + 1;	
+//			
+//		}
+//		int matrixLine=Math.min(cit1, cit2);
+//		int matrixCollumn=Math.max(cit1, cit2);
+//		 int chromosomePosition =0;
+//		 int collumn= matrixCollumn-1;
+//		 int offset=matrixLine;
+//		 for (int i=1; i<matrixLine; i++) {
+//			 chromosomePosition+= numberOfCities-i;
+//		 }
+//		 chromosomePosition+=matrixCollumn-offset;
+//		int decision=gerator.nextInt(101);
+//		if (/*decision>50*/ true) {
+//			
+//			int currently =s2.getVariableValue(chromosomePosition-1);
+//			if (currently==0) {
+//				System.out.println("link acrescentado");
+//				s2.setVariableValue(chromosomePosition-1, 1);
+//			}else {
+//				System.out.println("link remov1do");
+//				s2.setVariableValue(chromosomePosition-1, 0);
+//			}
+//		}
+//		return s2;
+//	}
+	
 	/**
 	 * metodo criado para acrescetar ou retirar link a duas 
 	 * cidades, complementando a busca local
@@ -754,35 +794,23 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	public DefaultIntegerSolution putRemoveEdge(DefaultIntegerSolution s2) {
 		
 		Random gerator = new Random();
-		int cit1 =0;
-		int cit2 =0;
-		int numberOfCities= s2.getLineColumn().length;
-		while (cit1==cit2) {
-			 cit1= gerator.nextInt((numberOfCities - 1) + 1) + 1;
-			 cit2= gerator.nextInt((numberOfCities - 1) + 1) + 1;	
+		int pos =0;
+		int max =0;
+		boolean continueTrue= true;
+		while (continueTrue||max>this.problem.getNumberOfVariables()) {
+			 pos= gerator.nextInt(this.problem.getNumberOfVariables());
+			 if (s2.getVariableValue(pos)==0) {
+				 continueTrue =false;
+				 s2.setVariableValue(pos,1);
+				 System.out.println("Acrescentei um link");
+				 
+			 }else {
+				continue; 
+			 }
 			
+			max+=1;
 		}
-		int matrixLine=Math.min(cit1, cit2);
-		int matrixCollumn=Math.max(cit1, cit2);
-		 int chromosomePosition =0;
-		 int collumn= matrixCollumn-1;
-		 int offset=matrixLine;
-		 for (int i=1; i<matrixLine; i++) {
-			 chromosomePosition+= numberOfCities-i;
-		 }
-		 chromosomePosition+=matrixCollumn-offset;
-		int decision=gerator.nextInt(101);
-		if (/*decision>50*/ true) {
-			
-			int currently =s2.getVariableValue(chromosomePosition-1);
-			if (currently==0) {
-				System.out.println("link acrescentado");
-				s2.setVariableValue(chromosomePosition-1, 1);
-			}else {
-				System.out.println("link remov1do");
-				s2.setVariableValue(chromosomePosition-1, 0);
-			}
-		}
+		
 		return s2;
 	}
 	
