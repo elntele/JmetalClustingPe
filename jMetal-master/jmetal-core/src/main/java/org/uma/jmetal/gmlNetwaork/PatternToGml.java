@@ -144,6 +144,31 @@ public class PatternToGml implements Serializable {
 		G.save(gmlLocal, patch);
 
 	}
+	
+	/**
+	 * metodo criado para recuperar os nós teminais vinda de um geml 
+	 * o retorno desse metodo é um array de pattern para ser colocado na sulution
+	 * @param gmldata
+	 * @return
+	 */
+	public Pattern[] takePatternData(GmlData gmldata){
+		
+		Pattern[] LineCollun=new Pattern[gmldata.getNodes().size()];
+		int i=0;
+		for ( GmlNode g: gmldata.getNodes()) {
+			Pattern p=new Pattern();
+			p.setName(g.getLabel());
+			double[] variable=new double[2];
+			variable[0]=g.getLatitude();
+			variable[0]=g.getLongitude();
+			p.setVariables(variable);
+			p.setId(g.getId());
+			LineCollun[i]=p;
+			i+=1;
+		}
+		
+		return LineCollun;
+	}
 
 	public GmlData getGml() {
 		return gml;

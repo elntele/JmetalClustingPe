@@ -77,6 +77,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	private HyperplaneObsevation hp; // add por jorge candeias
 	private List <List<Integer>> indexOfIndividualSelectionedToTheSearch = new ArrayList<>();
 	private List <List<Integer>> EqualizadListe = new ArrayList<>();
+	private boolean iDidTheFirstTimeAfterInciationFromAStopedExecution=false;
 
 	/** Constructor */
 	public NSGAIII(NSGAIIIBuilder<S> builder) { // can be created from the
@@ -1034,15 +1035,16 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 
 			for (int i = 0; i < population.size(); i++) {
 				// chamada para a busca local
-				if (i == arrayIndiceLower[0] || i == arrayIndiceLower[1] || i == arrayIndiceLower[2]
-						|| i == arrayIndiceLower[3] || i == arrayIndiceUpper[0] || i == arrayIndiceUpper[1]
-						|| i == arrayIndiceUpper[2] || i == arrayIndiceUpper[3]) {
+//				if (i == arrayIndiceLower[0] || i == arrayIndiceLower[1] || i == arrayIndiceLower[2]
+//						|| i == arrayIndiceLower[3] || i == arrayIndiceUpper[0] || i == arrayIndiceUpper[1]
+//						|| i == arrayIndiceUpper[2] || i == arrayIndiceUpper[3]) {
+				if (re.contains(i)) {
 					System.out.println("Solução top indice " + i);
 					IntegerSolution s2 = (changeMatrixElement((IntegerSolution) population.get(i).copy(),
 							numberNeighbors));// muda
 					// colocar a nova abordagem da busca local aqui
-					s2=putRemoveEdge((DefaultIntegerSolution) s2);
-					
+					s2 = putRemoveEdge((DefaultIntegerSolution) s2);
+
 					this.problem.evaluate((S) s2);
 
 					switch (coparation((IntegerSolution) population.get(i), s2)) {
@@ -1682,8 +1684,13 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 //		if (this.iterations<120 &&this.iterations>=2) {
 //			this.universityGraduate(population);
 //		}
+		boolean first= false;
+		if (this.prop.get("startFromAstopedIteration").equals("y") && !this.iDidTheFirstTimeAfterInciationFromAStopedExecution) {
+			first= true;
+			this.iDidTheFirstTimeAfterInciationFromAStopedExecution=true;
+		}
 
-		if (this.prop.getProperty("modo").equals("com busca") && this.iterations >=120) {
+		if (this.prop.getProperty("modo").equals("com busca") && !first && this.iterations >=120) {
 			int numberNeighbors = Integer.parseInt(this.prop.getProperty("numberNeighbors"));// mudar numero de vizinhos
 																								// da busca aqui
 			if (this.prop.getProperty("modo").equals("com busca")) {
