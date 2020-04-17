@@ -56,4 +56,26 @@ public class TournamentSelection<S extends Solution<?>> implements SelectionOper
 
     return result;
   }
+  /** Execute() method */
+  public S executeUniversity(List<S> solutionList, List <Integer> l) {
+    if (null == solutionList) {
+      throw new JMetalException("The solution list is null") ;
+    } else if (solutionList.isEmpty()) {
+      throw new JMetalException("The solution list is empty") ;
+    }
+
+    S result;
+    if (solutionList.size() == 1) {
+      result = solutionList.get(0);
+    } else {
+      result = SolutionListUtils.selectNRandomDifferentSolutions(1, solutionList).get(0);
+      int count = 1; // at least 2 solutions are compared
+      do {
+        S candidate = SolutionListUtils.selectNRandomDifferentSolutions(1, solutionList).get(0);
+        result = SolutionUtils.getBestSolution(result, candidate, comparator) ;
+      } while (++count < this.numberOfTournaments);
+    }
+
+    return result;
+  }
 }

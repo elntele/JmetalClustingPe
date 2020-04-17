@@ -11,6 +11,7 @@ import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
@@ -72,12 +73,13 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	private UUID ParallelEvaluateId;
 	private PatternToGml ptg;
 	private List<S> betterPareto;// adiononado por jorge candeias para pegar o front menos dominado
-	private List<List<S>> paretos=new ArrayList<>();
+	private List<List<S>> paretos = new ArrayList<>();
 	private List<S> lastPareto;
 	private HyperplaneObsevation hp; // add por jorge candeias
-	private List <List<Integer>> indexOfIndividualSelectionedToTheSearch = new ArrayList<>();
-	private List <List<Integer>> EqualizadListe = new ArrayList<>();
-	private boolean iDidTheFirstTimeAfterInciationFromAStopedExecution=false;
+	private List<List<Integer>> indexOfIndividualSelectionedToTheSearch = new ArrayList<>();
+	private List<List<Integer>> EqualizadListe = new ArrayList<>();
+	private boolean iDidTheFirstTimeAfterInciationFromAStopedExecution = false;
+	private List<Integer> iDidDominate=new ArrayList<>();
 
 	/** Constructor */
 	public NSGAIII(NSGAIIIBuilder<S> builder) { // can be created from the
@@ -128,7 +130,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	protected void updateProgress() {
 		iterations++;
 		System.out.println("numero de iteraçõs" + iterations);
-		if (this.iterations % 10 == 0 || iterations==198 ||iterations==202) {
+		if (this.iterations % 10 == 0 || iterations == 198 || iterations == 202) {
 			printFinalSolutionSet(this.population);
 		}
 	}
@@ -192,7 +194,6 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 		}
 
 	}
-	
 
 	@Override
 	protected List<S> evaluatePopulation(List<S> population) {
@@ -285,11 +286,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 		return population;
 
 	}
-	
-	
-	
-	
-	
+
 //	public void otherTestEqaulsSolution(DefaultIntegerSolution ITs, S oS) {
 //		boolean one =ITs.getvariables().toString().equals(oS.getva);
 //	}
@@ -307,9 +304,11 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 				}
 			}
 			stringVariableFromOriginalPopulation += "]";
-			boolean a= VariableFromRetornedSolution.getvariables().toString().equals(stringVariableFromOriginalPopulation);
-			boolean b = ( VariableFromRetornedSolution.getLineColumn().toString().equals(population.get(i).getLineColumn().toString() ) );
-			System.out.println("as soluções são iguais ? " + (a&&b));
+			boolean a = VariableFromRetornedSolution.getvariables().toString()
+					.equals(stringVariableFromOriginalPopulation);
+			boolean b = (VariableFromRetornedSolution.getLineColumn().toString()
+					.equals(population.get(i).getLineColumn().toString()));
+			System.out.println("as soluções são iguais ? " + (a && b));
 			// .out.println(s.getVariableValue(1));
 			i += 1;
 		}
@@ -746,7 +745,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 
 		return arrayIndiceUpper;
 	}
-	
+
 //	/**
 //	 * metodo criado para acrescetar ou retirar link a duas 
 //	 * cidades, complementando a busca local
@@ -786,36 +785,35 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 //		}
 //		return s2;
 //	}
-	
+
 	/**
-	 * metodo criado para acrescetar ou retirar link a duas 
-	 * cidades, complementando a busca local
+	 * metodo criado para acrescetar ou retirar link a duas cidades, complementando
+	 * a busca local
 	 * 
 	 */
 	public DefaultIntegerSolution putRemoveEdge(DefaultIntegerSolution s2) {
-		
+
 		Random gerator = new Random();
-		int pos =0;
-		int max =0;
-		boolean continueTrue= true;
-		while (continueTrue||max>this.problem.getNumberOfVariables()) {
-			 pos= gerator.nextInt(this.problem.getNumberOfVariables());
-			 if (s2.getVariableValue(pos)==0) {
-				 continueTrue =false;
-				 s2.setVariableValue(pos,1);
-				 System.out.println("Acrescentei um link");
-				 
-			 }else {
-				continue; 
-			 }
-			
-			max+=1;
+		int pos = 0;
+		int max = 0;
+		boolean continueTrue = true;
+		while (continueTrue || max > this.problem.getNumberOfVariables()) {
+			pos = gerator.nextInt(this.problem.getNumberOfVariables());
+			if (s2.getVariableValue(pos) == 0) {
+				continueTrue = false;
+				s2.setVariableValue(pos, 1);
+				System.out.println("Acrescentei um link");
+
+			} else {
+				continue;
+			}
+
+			max += 1;
 		}
-		
+
 		return s2;
 	}
-	
-	
+
 // quando era 8 individuos pior e melhor
 //	/**
 //	 * operador de busca local metodo 1
@@ -970,12 +968,12 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 			}
 			List<Integer> re = this.hp.selectTheCandidatesTolocalsearch(this.prop);
 //			List<Integer> re = this.hp.selectArearRichCandidatesTolocalsearch(this.prop, this.problem.getNumberOfVariables());
-			
+
 			this.indexOfIndividualSelectionedToTheSearch.add(re);
-			
+
 			System.out.println("soluções que atende, a regra " + this.hp.getTesteSolQueAtendExecge());
 			System.out.println("soluções que não atendem  a regra " + this.hp.getTesteSolQueNaoAtendExecge());
-			
+
 //			Integer[] arrayIndiceLower = takeNLowerSolutiox(arrayObjetiveValueUpper.clone(), population);
 //			Integer[] arrayIndiceUpper = takeNUpperSolutiox(arrayObjetiveValueLower.clone(), population,
 //					arrayIndiceLower.clone());
@@ -994,18 +992,18 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 
 			}
 			/*
-			// teste **********************************
-
-			List<DefaultIntegerSolution> populationParaTesteVindoDeHp = this.hp.getListaParaTeste();
-			List<S> populationLocal = new ArrayList<>();
-			for (int i = 0; i < re.size(); i++) {
-				populationLocal.add(population.get(re.get(i)));
-
-			}
-			
-			this.testEqualityBetweenOriginalSolutionAndReturnOfParallelEvaluate(populationParaTesteVindoDeHp,
-					populationLocal);
-					*/
+			 * // teste **********************************
+			 * 
+			 * List<DefaultIntegerSolution> populationParaTesteVindoDeHp =
+			 * this.hp.getListaParaTeste(); List<S> populationLocal = new ArrayList<>(); for
+			 * (int i = 0; i < re.size(); i++) {
+			 * populationLocal.add(population.get(re.get(i)));
+			 * 
+			 * }
+			 * 
+			 * this.testEqualityBetweenOriginalSolutionAndReturnOfParallelEvaluate(
+			 * populationParaTesteVindoDeHp, populationLocal);
+			 */
 
 //			for (int i = 0; i < copy.length; i++) {
 //				List<DefaultIntegerSolution> population = new ArrayList<>();
@@ -1056,6 +1054,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 						break;
 					case 1:
 						copySolution.add((S) s2);
+						this.iDidDominate.add(i);// novo
 						break;
 					default:
 						copySolution.add((S) population.get(i));
@@ -1087,7 +1086,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 					System.out.println("Solução da escolha randomica indice " + i);
 					IntegerSolution s2 = (changeMatrixElement((IntegerSolution) population.get(i).copy(),
 							numberNeighbors));// muda
-					s2=putRemoveEdge((DefaultIntegerSolution) s2);
+					s2 = putRemoveEdge((DefaultIntegerSolution) s2);
 					this.problem.evaluate((S) s2);
 
 					switch (coparation((IntegerSolution) population.get(i), s2)) {
@@ -1604,61 +1603,58 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 
 		return copySolution;
 	}
-	
+
 	/**
-	 * metodo criado para equalizar a populacao...
-	 * Foi chamado de universidade porque, apesar de ser um operador de 
-	 * crossOver, a ideia é de que seja um operador memetico no qual um individuo
-	 * desenvolva suas habilidades durante sua vida. dessa forma
-	 * nada melhor pra ensinar a um individuo novas habilidades do que uma faculdade.
-	 * O objetivo é colocar, como "professores", individuos raros. E colocar, como
-	 * "alunos", individuos comuns que tenham "tendencia" (Segundo melhor valor de 
-	 * objetivo) do mesmo tipo do primeiro melhor do professor.
-	 * apos o crossOver ha uma chance desse individuo "aluno" se caracterizar 
-	 * como o do professor.
-	 * se a nova solucao dominar o "aluno"  ou que pelo menos ambos sejam não 
-	 * dominados havera uma substituição. 
+	 * metodo criado para equalizar a populacao... Foi chamado de universidade
+	 * porque, apesar de ser um operador de crossOver, a ideia é de que seja um
+	 * operador memetico no qual um individuo desenvolva suas habilidades durante
+	 * sua vida. dessa forma nada melhor pra ensinar a um individuo novas
+	 * habilidades do que uma faculdade. O objetivo é colocar, como "professores",
+	 * individuos raros. E colocar, como "alunos", individuos comuns que tenham
+	 * "tendencia" (Segundo melhor valor de objetivo) do mesmo tipo do primeiro
+	 * melhor do professor. apos o crossOver ha uma chance desse individuo "aluno"
+	 * se caracterizar como o do professor. se a nova solucao dominar o "aluno" ou
+	 * que pelo menos ambos sejam não dominados havera uma substituição.
 	 */
 	public void universityGraduate(List<S> population) {
-		List <Integer> indexOfProfessors =new ArrayList();
-		
-		
+		List<Integer> indexOfProfessors = new ArrayList();
+
 		int indexOfProfessor = this.hp.getTheProfessor();
-		
-		List <Integer> indexofstudents=this.hp.getTheStudent(this.getProblem().getNumberOfObjectives(), indexOfProfessor);
-		
-			
-			
-			for (int i=0;i<indexofstudents.size();i++) {
-				List<S> listIndivAtEndSemester = new ArrayList<>(2);
-				listIndivAtEndSemester.add(population.get(indexOfProfessor));
-				listIndivAtEndSemester.add(population.get((int) indexofstudents.get(i)));
-				List<S> trainee=crossoverOperator.execute(listIndivAtEndSemester);
-				mutationOperator.execute(trainee.get(0));
-				mutationOperator.execute(trainee.get(1));
-				this.evaluatePopulation(trainee);
-				
-				/**
-				 * compara duas soluções e retorna: -1 se s1 domina s2 0 se s1 e s2 são não
-				 * dominadas 1 se s2 domina s1
-				 * 
-				 * @param solutio1 e solution2
-				 */
-				switch (coparation((IntegerSolution) population.get((int) indexofstudents.get(i)),(IntegerSolution)trainee.get(0))) {
-				case -1:
-					
-					break;
-				case 0:
-					population.set((int) indexofstudents.get(i),trainee.get(1));
-					break;
-				case 1:
-					population.set((int) indexofstudents.get(i),trainee.get(1));
-					break;
-				default:
-					System.out.println("deu falha no compara do universit");
-					break;
-				}
-				
+
+		List<Integer> indexofstudents = this.hp.getTheStudent(this.getProblem().getNumberOfObjectives(),
+				indexOfProfessor);
+
+		for (int i = 0; i < indexofstudents.size(); i++) {
+			List<S> listIndivAtEndSemester = new ArrayList<>(2);
+			listIndivAtEndSemester.add(population.get(indexOfProfessor));
+			listIndivAtEndSemester.add(population.get((int) indexofstudents.get(i)));
+			List<S> trainee = crossoverOperator.execute(listIndivAtEndSemester);
+			mutationOperator.execute(trainee.get(0));
+			mutationOperator.execute(trainee.get(1));
+			this.evaluatePopulation(trainee);
+
+			/**
+			 * compara duas soluções e retorna: -1 se s1 domina s2 0 se s1 e s2 são não
+			 * dominadas 1 se s2 domina s1
+			 * 
+			 * @param solutio1 e solution2
+			 */
+			switch (coparation((IntegerSolution) population.get((int) indexofstudents.get(i)),
+					(IntegerSolution) trainee.get(0))) {
+			case -1:
+
+				break;
+			case 0:
+				population.set((int) indexofstudents.get(i), trainee.get(1));
+				break;
+			case 1:
+				population.set((int) indexofstudents.get(i), trainee.get(1));
+				break;
+			default:
+				System.out.println("deu falha no compara do universit");
+				break;
+			}
+
 //				switch (coparation((IntegerSolution) population.get((int) indexofstudents.get(i)),(IntegerSolution)trainee.get(1))) {
 //				case -1:
 //					
@@ -1673,10 +1669,8 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 //					System.out.println("deu falha no compara do universit");
 //					break;
 //				}
-			}
-			
+		}
 
-		
 	}
 
 	@Override
@@ -1684,13 +1678,14 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 //		if (this.iterations<120 &&this.iterations>=2) {
 //			this.universityGraduate(population);
 //		}
-		boolean first= false;
-		if (this.prop.get("startFromAstopedIteration").equals("y") && !this.iDidTheFirstTimeAfterInciationFromAStopedExecution) {
-			first= true;
-			this.iDidTheFirstTimeAfterInciationFromAStopedExecution=true;
+		boolean first = false;
+		if (this.prop.get("startFromAstopedIteration").equals("y")
+				&& !this.iDidTheFirstTimeAfterInciationFromAStopedExecution) {
+			first = true;
+			this.iDidTheFirstTimeAfterInciationFromAStopedExecution = true;
 		}
 
-		if (this.prop.getProperty("modo").equals("com busca") && !first && this.iterations >=120) {
+		if (this.prop.getProperty("modo").equals("com busca") && !first && this.iterations >= Integer.parseInt(this.prop.getProperty("BeginSeach"))) {
 			int numberNeighbors = Integer.parseInt(this.prop.getProperty("numberNeighbors"));// mudar numero de vizinhos
 																								// da busca aqui
 			if (this.prop.getProperty("modo").equals("com busca")) {
@@ -1714,14 +1709,117 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 		}
 //		
 //		
-//		
+//		original preservado
+//		List<S> matingPopulation = new ArrayList<>(population.size());
+//		for (int i = 0; i < getMaxPopulationSize(); i++) {
+//			S solution = selectionOperator.execute(population);
+//			matingPopulation.add(solution);
+//		}
+		// daqui pra baixo ate a proxima marce de original
+		// é uma modificação proposta por jorge candeias pra
+		// introduzir os garanhões ou professores(a decidir o nome)
 		List<S> matingPopulation = new ArrayList<>(population.size());
+		int control = Integer.parseInt(this.prop.getProperty("nIndividuosToSearch"));
 		for (int i = 0; i < getMaxPopulationSize(); i++) {
-			S solution = selectionOperator.execute(population);
-			matingPopulation.add(solution);
-		}
+			if (this.iterations >= 2&&!first ) {
+				this.hp.richToPoorCalc();
+				List richToPor = this.hp.getRichToPoor();
+				List<List> hpDistribuction = hp.getFamilyOfIndividualInPopulation();
+//				List lastChampios = new ArrayList<>();
+//				if (this.indexOfIndividualSelectionedToTheSearch.size() > 0) {
+//					lastChampios.addAll(this.indexOfIndividualSelectionedToTheSearch
+//							.get(this.indexOfIndividualSelectionedToTheSearch.size() - 1)) ;
+//				} else {
+//					lastChampios.addAll(this.hp.selectTheCandidatesTolocalsearch(this.prop)) ;
+//				}
 
-		return matingPopulation;
+				Random random = new Random();
+				int luck = random.nextInt(2);
+				int  professor = -1;
+				
+				try {
+//					professor = (int) lastChampios.get(0);
+					
+				professor = this.hp.takeTheProfessor();
+				} catch (Exception indexOutOfBounds) {
+					System.out.println();
+				}
+				boolean travarEqualizer=true;
+				S solution = selectionOperator.execute(population);
+				S pivo = null;
+				if ((luck == 0 || this.iDidDominate.size() == 0)&&!travarEqualizer) {
+					pivo = population.get(professor);
+					if (control > 0) {
+						// se a solução selecionada est no grupo rico
+						if (this.hp.contaiSolution(solution, hpDistribuction.get((int) richToPor.get(0)))) {
+
+							switch (coparation((IntegerSolution) solution, (IntegerSolution) pivo)) {
+							case -1:
+								break;
+							case 0:
+								luck=random.nextInt(2);
+								if (luck == 0) {
+									solution = pivo;
+									control -= 1;
+								}
+								break;
+							case 1:
+								System.out.println("esse foi o professor Î");
+								luck = random.nextInt(2);
+								if (luck == 0) {
+									solution = pivo;
+									control -= 1;
+								}
+								break;
+							default:
+								System.out.println("deu falha no compara");
+								break;
+							}
+
+						}
+
+					}
+				} else if (this.iDidDominate.size() != 0) {
+					Collections.shuffle(this.iDidDominate);// por que eu embaralhie ?
+					pivo = population.get((int) this.iDidDominate.get(0));
+					if (control > 0) {
+						// se a solução selecionada est no grupo rico
+						if (this.hp.contaiSolution(solution, hpDistribuction.get((int) richToPor.get(0)))) {
+
+							switch (coparation((IntegerSolution) solution, (IntegerSolution) pivo)) {
+							case -1:
+								break;
+							case 0:
+								solution = pivo;
+								control -= 1;
+								iDidDominate.remove(0);
+								break;
+							case 1:
+								solution = pivo;
+								iDidDominate.remove(0);
+								control -= 1;
+								break;
+							default:
+								System.out.println("deu falha no compara");
+								break;
+							}
+
+						}
+
+					}
+				}
+
+				matingPopulation.add(solution);
+
+			} else {
+
+				S solution = selectionOperator.execute(population);
+				matingPopulation.add(solution);
+			}
+		}
+		this.iDidDominate.removeAll(this.iDidDominate);
+		// daqui pra baixo volta a ser o original
+		return matingPopulation;// origina
 	}
 
 	// @Override
@@ -1804,29 +1902,28 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 				getReferencePointsCopy(), getProblem().getNumberOfObjectives());
 
 		pop = selection.execute(pop);
-		this.envi=selection;// autor jorge candeias
+		this.envi = selection;// autor jorge candeias
 		this.hp = selection.getHpo();// autor jorge candeias
 		tradeTheObservationPlane(pop);// autor jorge candeias
 		this.EqualizadListe.add(this.hp.geteQualizationList());// autor jorge candeias
-		//this.hp.externalAssociateTheLargestToThefamilyOfIndividualInPopulation(prop,this.problem.getNumberOfVariables());//  adicioinado patra teste jorge candeias
+		// this.hp.externalAssociateTheLargestToThefamilyOfIndividualInPopulation(prop,this.problem.getNumberOfVariables());//
+		// adicioinado patra teste jorge candeias
 		return pop;
 	}
+
 	/**
-	 * adicionado por jorge candeias para trabalhar
-	 * a alimentacao da obsevarcao do hyperplano 
+	 * adicionado por jorge candeias para trabalhar a alimentacao da obsevarcao do
+	 * hyperplano
 	 */
-	public void tradeTheObservationPlane(List<S> population ) {
-		int i=0;
-		for (S s:population) {
-			AnIndividualAndHisVector<S> ind = new AnIndividualAndHisVector ((DefaultIntegerSolution)s, i );
-			int teste=this.hp.includeSolutionInGroupAppropriate(ind);
-			i+=1;
+	public void tradeTheObservationPlane(List<S> population) {
+		int i = 0;
+		for (S s : population) {
+			AnIndividualAndHisVector<S> ind = new AnIndividualAndHisVector((DefaultIntegerSolution) s, i);
+			int teste = this.hp.includeSolutionInGroupAppropriate(ind);
+			i += 1;
 		}
 		this.hp.eQualization();
 	}
-	
-	
-	
 
 	public List<List<Integer>> getEqualizadListe() {
 		return EqualizadListe;
@@ -1888,8 +1985,6 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	public void setCont(int cont) {
 		this.cont = cont;
 	}
-	
-	
 
 	public List<List<Integer>> getIndexOfIndividualSelectionedToTheSearch() {
 		return indexOfIndividualSelectionedToTheSearch;
