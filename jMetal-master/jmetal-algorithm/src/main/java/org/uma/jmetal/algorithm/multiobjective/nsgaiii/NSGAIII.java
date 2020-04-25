@@ -967,20 +967,13 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 				arrayObjetiveValueUpper[i] = Double.MAX_VALUE;
 			}
 			List<Integer> re = this.hp.selectTheCandidatesTolocalsearch(this.prop);
-//			List<Integer> re = this.hp.selectArearRichCandidatesTolocalsearch(this.prop, this.problem.getNumberOfVariables());
 
 			this.indexOfIndividualSelectionedToTheSearch.add(re);
 
 			System.out.println("soluções que atende, a regra " + this.hp.getTesteSolQueAtendExecge());
 			System.out.println("soluções que não atendem  a regra " + this.hp.getTesteSolQueNaoAtendExecge());
 
-//			Integer[] arrayIndiceLower = takeNLowerSolutiox(arrayObjetiveValueUpper.clone(), population);
-//			Integer[] arrayIndiceUpper = takeNUpperSolutiox(arrayObjetiveValueLower.clone(), population,
-//					arrayIndiceLower.clone());
-//			Integer[] arrayIndiceLower = takeNLowerSolutiox(arrayObjetiveValueUpper.clone(), this.betterPareto, 0,population);
-//			Integer[] arrayIndiceUpper = takeNUpperSolutiox(arrayObjetiveValueLower.clone(), this.betterPareto,
-//					arrayIndiceLower.clone(), 0,population);
-////
+
 			int medio = re.size() / 2;
 			Integer[] arrayIndiceLower = new Integer[medio];
 			Integer[] arrayIndiceUpper = new Integer[medio];
@@ -991,51 +984,12 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 				medio += 1;
 
 			}
-			/*
-			 * // teste **********************************
-			 * 
-			 * List<DefaultIntegerSolution> populationParaTesteVindoDeHp =
-			 * this.hp.getListaParaTeste(); List<S> populationLocal = new ArrayList<>(); for
-			 * (int i = 0; i < re.size(); i++) {
-			 * populationLocal.add(population.get(re.get(i)));
-			 * 
-			 * }
-			 * 
-			 * this.testEqualityBetweenOriginalSolutionAndReturnOfParallelEvaluate(
-			 * populationParaTesteVindoDeHp, populationLocal);
-			 */
 
-//			for (int i = 0; i < copy.length; i++) {
-//				List<DefaultIntegerSolution> population = new ArrayList<>();
-//				List<S> listaEmTeste = new ArrayList<>();
-//				population.add((DefaultIntegerSolution) populationParateste.get(arrayIndice[i]));
-//				listaEmTeste.add(popReceived.get(copy[i]));
-//				this.testEqualityBetweenOriginalSolutionAndReturnOfParallelEvaluate(population, listaEmTeste);
-//			}
-
-			// ******************************************
-
-//
-
-//			Integer[] bigArray = bringMeTheIndiceOfIndividualsWhithBetterObjectives(8, this.betterPareto,
-//					this.paretos.size(), population);
-//			Integer[] arrayIndiceLower = new Integer[4];
-//			Integer[] arrayIndiceUpper= new Integer[4];
-//			
-//			for (int i=0;i<4;i++) {
-//				if (i<4) {
-//					arrayIndiceLower[i]=bigArray[i];
-//					arrayIndiceUpper[i]=bigArray[i+4];
-//					}
-//			}
 
 			// Jorge candeias
 
 			for (int i = 0; i < population.size(); i++) {
 				// chamada para a busca local
-//				if (i == arrayIndiceLower[0] || i == arrayIndiceLower[1] || i == arrayIndiceLower[2]
-//						|| i == arrayIndiceLower[3] || i == arrayIndiceUpper[0] || i == arrayIndiceUpper[1]
-//						|| i == arrayIndiceUpper[2] || i == arrayIndiceUpper[3]) {
 				if (re.contains(i)) {
 					System.out.println("Solução top indice " + i);
 					IntegerSolution s2 = (changeMatrixElement((IntegerSolution) population.get(i).copy(),
@@ -1117,12 +1071,9 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 			for (Solution s1 : population) {
 				// chamada para a busca local
 				IntegerSolution s2 = (changeMatrixElement((IntegerSolution) s1.copy(), numberNeighbors));// muda
-																											// um
-				// elemento
-				// IntegerSolution s2 = (changeMatrix((IntegerSolution) s1.copy()));
-				// // muda
-				// matrix
-				// inteira
+				
+				s2 = putRemoveEdge((DefaultIntegerSolution) s2);
+
 				this.problem.evaluate((S) s2);
 
 				switch (coparation((IntegerSolution) s1, s2)) {
@@ -1721,36 +1672,26 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 		List<S> matingPopulation = new ArrayList<>(population.size());
 		int control = Integer.parseInt(this.prop.getProperty("nIndividuosToSearch"));
 		for (int i = 0; i < getMaxPopulationSize(); i++) {
-			if (this.iterations >= 2&&!first ) {
+			if (this.iterations >= 2&&!first&& this.prop.getProperty("giveAssuranceToTheImprovedIndividualBeFatherOnetime").equals("y") ) {
 				this.hp.richToPoorCalc();
 				List richToPor = this.hp.getRichToPoor();
 				List<List> hpDistribuction = hp.getFamilyOfIndividualInPopulation();
-//				List lastChampios = new ArrayList<>();
-//				if (this.indexOfIndividualSelectionedToTheSearch.size() > 0) {
-//					lastChampios.addAll(this.indexOfIndividualSelectionedToTheSearch
-//							.get(this.indexOfIndividualSelectionedToTheSearch.size() - 1)) ;
-//				} else {
-//					lastChampios.addAll(this.hp.selectTheCandidatesTolocalsearch(this.prop)) ;
-//				}
 
 				Random random = new Random();
 				int luck = random.nextInt(2);
 				int  professor = -1;
 				
 				try {
-//					professor = (int) lastChampios.get(0);
-					
 				professor = this.hp.takeTheProfessor();
 				} catch (Exception indexOutOfBounds) {
 					System.out.println();
 				}
-				boolean travarEqualizer=true;
 				S solution = selectionOperator.execute(population);
 				S pivo = null;
-				if ((luck == 0 || this.iDidDominate.size() == 0)&&!travarEqualizer) {
+				if ((luck == 0 || this.iDidDominate.size() == 0)&&this.prop.getProperty("equalizePopulationAboutIndividualType").equals("y")&& this.iterations<120) {
 					pivo = population.get(professor);
 					if (control > 0) {
-						// se a solução selecionada est no grupo rico
+						// se a solução selecionada está no grupo rico
 						if (this.hp.contaiSolution(solution, hpDistribuction.get((int) richToPor.get(0)))) {
 
 							switch (coparation((IntegerSolution) solution, (IntegerSolution) pivo)) {
@@ -1783,7 +1724,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 					Collections.shuffle(this.iDidDominate);// por que eu embaralhie ?
 					pivo = population.get((int) this.iDidDominate.get(0));
 					if (control > 0) {
-						// se a solução selecionada est no grupo rico
+						// se a solução selecionada está no grupo rico
 						if (this.hp.contaiSolution(solution, hpDistribuction.get((int) richToPor.get(0)))) {
 
 							switch (coparation((IntegerSolution) solution, (IntegerSolution) pivo)) {
