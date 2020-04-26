@@ -79,7 +79,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	private List<List<Integer>> indexOfIndividualSelectionedToTheSearch = new ArrayList<>();
 	private List<List<Integer>> EqualizadListe = new ArrayList<>();
 	private boolean iDidTheFirstTimeAfterInciationFromAStopedExecution = false;
-	private List<Integer> iDidDominate=new ArrayList<>();
+	private List<Integer> iDidDominate = new ArrayList<>();
 
 	/** Constructor */
 	public NSGAIII(NSGAIIIBuilder<S> builder) { // can be created from the
@@ -973,7 +973,6 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 			System.out.println("soluções que atende, a regra " + this.hp.getTesteSolQueAtendExecge());
 			System.out.println("soluções que não atendem  a regra " + this.hp.getTesteSolQueNaoAtendExecge());
 
-
 			int medio = re.size() / 2;
 			Integer[] arrayIndiceLower = new Integer[medio];
 			Integer[] arrayIndiceUpper = new Integer[medio];
@@ -984,7 +983,6 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 				medio += 1;
 
 			}
-
 
 			// Jorge candeias
 
@@ -1071,7 +1069,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 			for (Solution s1 : population) {
 				// chamada para a busca local
 				IntegerSolution s2 = (changeMatrixElement((IntegerSolution) s1.copy(), numberNeighbors));// muda
-				
+
 				s2 = putRemoveEdge((DefaultIntegerSolution) s2);
 
 				this.problem.evaluate((S) s2);
@@ -1636,7 +1634,8 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 			this.iDidTheFirstTimeAfterInciationFromAStopedExecution = true;
 		}
 
-		if (this.prop.getProperty("modo").equals("com busca") && !first && this.iterations >= Integer.parseInt(this.prop.getProperty("BeginSeach"))) {
+		if (this.prop.getProperty("modo").equals("com busca") && !first
+				&& this.iterations >= Integer.parseInt(this.prop.getProperty("BeginSeach"))) {
 			int numberNeighbors = Integer.parseInt(this.prop.getProperty("numberNeighbors"));// mudar numero de vizinhos
 																								// da busca aqui
 			if (this.prop.getProperty("modo").equals("com busca")) {
@@ -1672,23 +1671,26 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 		List<S> matingPopulation = new ArrayList<>(population.size());
 		int control = Integer.parseInt(this.prop.getProperty("nIndividuosToSearch"));
 		for (int i = 0; i < getMaxPopulationSize(); i++) {
-			if (this.iterations >= 2&&!first&& this.prop.getProperty("giveAssuranceToTheImprovedIndividualBeFatherOnetime").equals("y") ) {
+			if (this.iterations >= 2 && !first
+					&& this.prop.getProperty("giveAssuranceToTheImprovedIndividualBeFatherOnetime").equals("y")) {
 				this.hp.richToPoorCalc();
 				List richToPor = this.hp.getRichToPoor();
 				List<List> hpDistribuction = hp.getFamilyOfIndividualInPopulation();
 
 				Random random = new Random();
 				int luck = random.nextInt(2);
-				int  professor = -1;
-				
+				int professor = -1;
+
 				try {
-				professor = this.hp.takeTheProfessor();
+					professor = this.hp.takeTheProfessor();
 				} catch (Exception indexOutOfBounds) {
 					System.out.println();
 				}
 				S solution = selectionOperator.execute(population);
 				S pivo = null;
-				if ((luck == 0 || this.iDidDominate.size() == 0)&&this.prop.getProperty("equalizePopulationAboutIndividualType").equals("y")&& this.iterations<120) {
+				if ((luck == 0 || this.iDidDominate.size() == 0)
+						&& this.prop.getProperty("equalizePopulationAboutIndividualType").equals("y")
+						&& this.iterations < 120) {
 					pivo = population.get(professor);
 					if (control > 0) {
 						// se a solução selecionada está no grupo rico
@@ -1698,7 +1700,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 							case -1:
 								break;
 							case 0:
-								luck=random.nextInt(2);
+								luck = random.nextInt(2);
 								if (luck == 0) {
 									solution = pivo;
 									control -= 1;
