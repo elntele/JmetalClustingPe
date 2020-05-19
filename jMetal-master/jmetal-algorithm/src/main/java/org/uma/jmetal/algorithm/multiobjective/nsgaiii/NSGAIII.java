@@ -121,6 +121,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	protected void initProgress() {
 		if (this.prop.get("startFromAstopedIteration").equals("y")) {
 			iterations = Integer.parseInt(this.prop.getProperty("interationStopedInExecution"));
+			
 		} else {
 			iterations = 1;
 		}
@@ -1632,6 +1633,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 				&& !this.iDidTheFirstTimeAfterInciationFromAStopedExecution) {
 			first = true;
 			this.iDidTheFirstTimeAfterInciationFromAStopedExecution = true;
+			this.prop.setProperty("startFromAstopedIteration", "n");
 		}
 
 		if (this.prop.getProperty("modo").equals("com busca") && !first
@@ -1690,7 +1692,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 				S pivo = null;
 				if ((luck == 0 || this.iDidDominate.size() == 0)
 						&& this.prop.getProperty("equalizePopulationAboutIndividualType").equals("y")
-						&& this.iterations < 120) {
+						/*&& this.iterations < 120*/) {
 					pivo = population.get(professor);
 					if (control > 0) {
 						// se a solução selecionada está no grupo rico
@@ -1702,6 +1704,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 							case 0:
 								luck = random.nextInt(2);
 								if (luck == 0) {
+									System.out.println("sincronizando");
 									solution = pivo;
 									control -= 1;
 								}
@@ -1841,6 +1844,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 
 		// A copy of the reference list should be used as parameter of the
 		// environmental selection
+		
 		EnvironmentalSelection<S> selection = new EnvironmentalSelection<>(fronts, getMaxPopulationSize(),
 				getReferencePointsCopy(), getProblem().getNumberOfObjectives());
 
