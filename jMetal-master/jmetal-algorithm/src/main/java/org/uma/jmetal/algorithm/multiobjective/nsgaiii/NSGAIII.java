@@ -80,6 +80,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	private List<List<Integer>> EqualizadListe = new ArrayList<>();
 	private boolean iDidTheFirstTimeAfterInciationFromAStopedExecution = false;
 	private List<Integer> iDidDominate = new ArrayList<>();
+	private List<List<S>> fronts = new ArrayList<>();// esse fio inserido para o tratamento de controle de reprodução
 
 	/** Constructor */
 	public NSGAIII(NSGAIIIBuilder<S> builder) { // can be created from the
@@ -1667,103 +1668,124 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 //			S solution = selectionOperator.execute(population);
 //			matingPopulation.add(solution);
 //		}
-		// daqui pra baixo ate a proxima marce de original
+		// daqui pra baixo ate a proxima marca de original
 		// é uma modificação proposta por jorge candeias pra
 		// introduzir os garanhões ou professores(a decidir o nome)
 		List<S> matingPopulation = new ArrayList<>(population.size());
 		int control = Integer.parseInt(this.prop.getProperty("nIndividuosToSearch"));
-		for (int i = 0; i < getMaxPopulationSize(); i++) {
-			if (this.iterations >= 2 && !first
-					&& this.prop.getProperty("giveAssuranceToTheImprovedIndividualBeFatherOnetime").equals("y")) {
-				this.hp.richToPoorCalc();
-				List richToPor = this.hp.getRichToPoor();
-				List<List> hpDistribuction = hp.getFamilyOfIndividualInPopulation();
-
-				Random random = new Random();
-				int luck = random.nextInt(2);
-				int professor = -1;
-
-				try {
-					professor = this.hp.takeTheProfessor();
-				} catch (Exception indexOutOfBounds) {
-					System.out.println();
-				}
-				S solution = selectionOperator.execute(population);
-				S pivo = null;
-				if ((luck == 0 || this.iDidDominate.size() == 0)
-						&& this.prop.getProperty("equalizePopulationAboutIndividualType").equals("y")
-						/*&& this.iterations < 120*/) {
-					pivo = population.get(professor);
-					if (control > 0) {
-						// se a solução selecionada está no grupo rico
-						if (this.hp.contaiSolution(solution, hpDistribuction.get((int) richToPor.get(0)))) {
-
-							switch (coparation((IntegerSolution) solution, (IntegerSolution) pivo)) {
-							case -1:
-								break;
-							case 0:
-								luck = random.nextInt(2);
-								if (luck == 0) {
-									System.out.println("sincronizando");
-									solution = pivo;
-									control -= 1;
-								}
-								break;
-							case 1:
-								System.out.println("esse foi o professor Î");
-								luck = random.nextInt(2);
-								if (luck == 0) {
-									solution = pivo;
-									control -= 1;
-								}
-								break;
-							default:
-								System.out.println("deu falha no compara");
-								break;
-							}
-
-						}
-
-					}
-				} else if (this.iDidDominate.size() != 0) {
-					Collections.shuffle(this.iDidDominate);// por que eu embaralhie ?
-					pivo = population.get((int) this.iDidDominate.get(0));
-					if (control > 0) {
-						// se a solução selecionada está no grupo rico
-						if (this.hp.contaiSolution(solution, hpDistribuction.get((int) richToPor.get(0)))) {
-
-							switch (coparation((IntegerSolution) solution, (IntegerSolution) pivo)) {
-							case -1:
-								break;
-							case 0:
-								solution = pivo;
-								control -= 1;
-								iDidDominate.remove(0);
-								break;
-							case 1:
-								solution = pivo;
-								iDidDominate.remove(0);
-								control -= 1;
-								break;
-							default:
-								System.out.println("deu falha no compara");
-								break;
-							}
-
-						}
-
-					}
-				}
-
-				matingPopulation.add(solution);
-
-			} else {
-
+//		for (int i = 0; i < getMaxPopulationSize(); i++) {
+//			if (this.iterations >= 2 && !first
+//					&& this.prop.getProperty("giveAssuranceToTheImprovedIndividualBeFatherOnetime").equals("y")) {
+//				this.hp.richToPoorCalc();
+//				List richToPor = this.hp.getRichToPoor();
+//				List<List> hpDistribuction = hp.getFamilyOfIndividualInPopulation();
+//
+//				Random random = new Random();
+//				int luck = random.nextInt(2);
+//				int professor = -1;
+//
+//				try {
+//					professor = this.hp.takeTheProfessor();
+//				} catch (Exception indexOutOfBounds) {
+//					System.out.println();
+//				}
+//				S solution = selectionOperator.execute(population);
+//				S pivo = null;
+//				if ((luck == 0 || this.iDidDominate.size() == 0)
+//						&& this.prop.getProperty("equalizePopulationAboutIndividualType").equals("y")
+//						/*&& this.iterations < 120*/) {
+//					pivo = population.get(professor);
+//					if (control > 0) {
+//						// se a solução selecionada está no grupo rico
+//						if (this.hp.contaiSolution(solution, hpDistribuction.get((int) richToPor.get(0)))) {
+//
+//							switch (coparation((IntegerSolution) solution, (IntegerSolution) pivo)) {
+//							case -1:
+//								break;
+//							case 0:
+//								luck = random.nextInt(2);
+//								if (luck == 0) {
+//									System.out.println("sincronizando");
+//									solution = pivo;
+//									control -= 1;
+//								}
+//								break;
+//							case 1:
+//								System.out.println("esse foi o professor Î");
+//								luck = random.nextInt(2);
+//								if (luck == 0) {
+//									solution = pivo;
+//									control -= 1;
+//								}
+//								break;
+//							default:
+//								System.out.println("deu falha no compara");
+//								break;
+//							}
+//
+//						}
+//
+//					}
+//				} else if (this.iDidDominate.size() != 0) {
+//					Collections.shuffle(this.iDidDominate);// por que eu embaralhie ?
+//					pivo = population.get((int) this.iDidDominate.get(0));
+//					if (control > 0) {
+//						// se a solução selecionada está no grupo rico
+//						if (this.hp.contaiSolution(solution, hpDistribuction.get((int) richToPor.get(0)))) {
+//
+//							switch (coparation((IntegerSolution) solution, (IntegerSolution) pivo)) {
+//							case -1:
+//								break;
+//							case 0:
+//								solution = pivo;
+//								control -= 1;
+//								iDidDominate.remove(0);
+//								break;
+//							case 1:
+//								solution = pivo;
+//								iDidDominate.remove(0);
+//								control -= 1;
+//								break;
+//							default:
+//								System.out.println("deu falha no compara");
+//								break;
+//							}
+//
+//						}
+//
+//					}
+//				}
+//
+//				matingPopulation.add(solution);
+//
+//			} else {
+//
+//				S solution = selectionOperator.execute(population);
+//				matingPopulation.add(solution);
+//			}
+//		}
+		//************teste comtrole populacional mais assistido
+		if (this.fronts.size()==1 && !this.hp.isEqualized()) {
+		for (int k=0;k<this.iDidDominate.size();k++) {
+			matingPopulation.add(population.get(k));
+		}
+		
+		this.hp.PopulationControlMating(matingPopulation,this.iDidDominate);
+		int cont =matingPopulation.size();
+		while (cont< getMaxPopulationSize()) {
+			S solution = selectionOperator.execute(population);
+			matingPopulation.add(solution);
+			cont+=1;
+		}
+		}else {
+			for (int i = 0; i < getMaxPopulationSize(); i++) {
 				S solution = selectionOperator.execute(population);
 				matingPopulation.add(solution);
 			}
+			
 		}
-		this.iDidDominate.removeAll(this.iDidDominate);
+		//************fim do códigoteste comtrole populacional mais assistido
+		this.iDidDominate.removeAll(this.iDidDominate);// se for voltar ao código de antes do controle populacional mais assistdo essa linha fica também.
 		// daqui pra baixo volta a ser o original
 		return matingPopulation;// origina
 	}
@@ -1849,6 +1871,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 				getReferencePointsCopy(), getProblem().getNumberOfObjectives());
 
 		pop = selection.execute(pop);
+		this.fronts=fronts;// auro jorge candeias pata tratamento de controle de reprodução
 		this.envi = selection;// autor jorge candeias
 		this.hp = selection.getHpo();// autor jorge candeias
 		tradeTheObservationPlane(pop);// autor jorge candeias
@@ -1870,6 +1893,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 			i += 1;
 		}
 		this.hp.eQualization();
+		this.hp.separateIndividualsAccordingToTheTrend();
 	}
 
 	public List<List<Integer>> getEqualizadListe() {

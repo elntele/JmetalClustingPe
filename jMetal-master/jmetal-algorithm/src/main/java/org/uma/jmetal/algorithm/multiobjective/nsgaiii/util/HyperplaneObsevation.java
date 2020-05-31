@@ -40,6 +40,7 @@ public class HyperplaneObsevation<S extends Solution<?>> {
 	private int TesteSolQueNaoAtendExecge = 0;
 	private List<Integer> poorToRich;
 	private List<Integer> richToPoor;
+	private List<List<AnIndividualAndHisVector<S>>> thoseIndividualsAndThisTrend = new ArrayList<>();
 
 	public HyperplaneObsevation(int numberOfObjectives) {
 		this.numberOfObjectives = numberOfObjectives;
@@ -47,6 +48,11 @@ public class HyperplaneObsevation<S extends Solution<?>> {
 		for (int i = 0; i < numberOfObjectives; i++) {
 			List<AnIndividualAndHisVector<S>> l = new ArrayList<>();
 			this.familyOfIndividualInPopulation.add(l);
+		}
+		// acrescentando a lista de individuos segundo sua tendencia
+		for (int i = 0; i < numberOfObjectives; i++) {
+			List<AnIndividualAndHisVector<S>> k = new ArrayList<>();
+			this.thoseIndividualsAndThisTrend.add(k);
 		}
 
 		this.LargestReferencePointClusters = new ArrayList<>();
@@ -72,12 +78,15 @@ public class HyperplaneObsevation<S extends Solution<?>> {
 		if (mG >= 4 || mG < 0) {
 			System.out.println("index de grupo indesejado");
 		}
-		int antes = this.familyOfIndividualInPopulation.get(mG).size();
+		// int antes = this.familyOfIndividualInPopulation.get(mG).size();
 		this.familyOfIndividualInPopulation.get(mG).add((AnIndividualAndHisVector<S>) ind);
-		int depois = this.familyOfIndividualInPopulation.get(mG).size();
-		if (antes == depois) {
-			System.out.println();
-		}
+//		int depois = this.familyOfIndividualInPopulation.get(mG).size();
+//		if (antes == depois) {
+//			System.out.println();
+//		}
+
+		// investigar porque tem este teste retorno, acho que pode ser apagado
+		// a função virar void
 		int testeRetorno = 0;
 		for (int i = 0; i < this.familyOfIndividualInPopulation.size(); i++) {
 			testeRetorno += this.familyOfIndividualInPopulation.get(i).size();
@@ -103,72 +112,270 @@ public class HyperplaneObsevation<S extends Solution<?>> {
 		return org.uma.jmetal.algorithm.multiobjective.nsgaiii.util.EnvironmentalSelection.class;
 	}
 
-	public int myGroup(List<Double> atributes) {
-		Double lower = Double.MAX_VALUE;
-		List<Integer> equals = new ArrayList<>();
-		int iLower = 0;
-		int icurrent = 0;
-		Random gerator = new Random();
-		for (Double d : atributes) {
-			if (d < lower) {
-				lower = d;
-				iLower = icurrent;
-			} else if (d == lower) {
-
-				if ((equals).size() == 0) {
-					equals.add(iLower);
-					equals.add(icurrent);
-				} else {
-					equals.add(icurrent);
+//	/**
+//	 * this method calculate what is the better objective values using 
+//	 * the attributes. Its is lake a podium, for a minimization problem, 
+//	 * when the smallest  attribute is the third, then the third attribute 
+//	 * is in the first place on the podium  
+//	 * @param atributes
+//	 * @return
+//	 */
+//	public int myGroup(List<Double> atributes) {
+//		Double lower = Double.MAX_VALUE;
+//		List<Integer> equals = new ArrayList<>();
+//		int iLower = 0;
+//		int icurrent = 0;
+//		Random gerator = new Random();
+//		for (Double d : atributes) {
+//			if (d < lower) {
+//				lower = d;
+//				iLower = icurrent;
+//			} else if (d == lower) {
+//
+//				if ((equals).size() == 0) {
+//					equals.add(iLower);
+//					equals.add(icurrent);
+//				} else {
+//					equals.add(icurrent);
+//				}
+//			}
+//			icurrent++;
+//		}
+//		if (equals.size() == 0) {
+//			// teste
+//			if (iLower >= 4) {
+//				System.out.println("situação indesejada em myGroup ");
+//			}
+//			// *************
+//			return iLower;
+//		} else {
+//			// teste
+//			int r = gerator.nextInt(equals.size() - 1);
+//			if (r >= 4) {
+//				System.out.println("situação indesejada em myGroup ");
+//			}
+//			// **********
+//			return r;
+//		}
+//
+//	}
+	/**
+	 * this method calculate what is the better objective value using the
+	 * attributes. Its is as a podium for example, for a minimization problem, were
+	 * the first smallest attribute is the third attribute, then the third attribute
+	 * is in the first place on the podium. And the first place characterizes my
+	 * group
+	 * 
+	 * @param atributes
+	 * @return int myGroup
+	 */
+	public int myGroup(List<Double> attributes) {
+		List<Double> ordenadAttributes = new ArrayList<>();
+		ordenadAttributes.addAll(attributes);
+		Collections.sort(ordenadAttributes);
+		List<Integer> betterForWorse = new ArrayList<>();
+		for (Double d : ordenadAttributes) {
+			for (int i = 0; i < attributes.size(); i++) {
+				if (d == attributes.get(i)) {
+					betterForWorse.add(i);
 				}
 			}
-			icurrent++;
 		}
-		if (equals.size() == 0) {
-			// teste
-			if (iLower >= 4) {
-				System.out.println("situação indesejada em myGroup ");
+
+		return betterForWorse.get(0);
+
+	}
+//	/**
+//	 *  this method calculate what is the second better objective value using
+//	 *  the attributes. Its is as a podium for example, for a minimization problem,  
+//	 *  were  the second smallest  attribute is the third attribute, then the third 
+//	 *  attribute  is in the second place on the podium. And the second place is the 
+//	 *  trend
+//	 * @param atributes
+//	 * @return
+//	 */
+
+//	public void setTheIndividualTrend(List<Double> atributes, AnIndividualAndHisVector ind) {
+//		Double lower = Double.MAX_VALUE;
+//		List<Integer> equals = new ArrayList<>();
+//		int iLower = 0;
+//		int icurrent = 0;
+//		Random gerator = new Random();
+//		for (Double d : atributes) {
+//			if (icurrent != ind.getMyGroups()) {
+//				if (d < lower) {
+//					lower = d;
+//					iLower = icurrent;
+//				} else if (d == lower) {
+//					if ((equals).size() == 0) {
+//						equals.add(iLower);
+//						equals.add(icurrent);
+//					} else {
+//						equals.add(icurrent);
+//					}
+//				}
+//			}
+//			icurrent++;
+//		}
+//		if (equals.size() == 0) {
+//			ind.setMyTrends(iLower);
+//		} else {
+//			ind.setMyTrends(gerator.nextInt(equals.size() - 1));
+//		}
+//
+//	}
+	/**
+	 * this method calculate what is the second better objective value using the
+	 * attributes. Its is as a podium for example, for a minimization problem, were
+	 * the second smallest attribute is the third attribute, then the third
+	 * attribute is in the second place on the podium. And the second place is the
+	 * trend
+	 * 
+	 * @param atributes
+	 * @return
+	 */
+
+	public void setTheIndividualTrend(List<Double> attributes, AnIndividualAndHisVector ind) {
+		if(attributes.size()>10) {
+			System.out.println();
+		}
+		List<Double> ordenadAttributes = new ArrayList<>();
+		ordenadAttributes.addAll(attributes);
+		Collections.sort(ordenadAttributes);
+		List<Integer> betterForWorse = new ArrayList<>();
+		for (Double d : ordenadAttributes) {
+			for (int i = 0; i < attributes.size(); i++) {
+				if (d == attributes.get(i)) {
+					betterForWorse.add(i);
+				}
 			}
-			// *************
-			return iLower;
-		} else {
-			// teste
-			int r = gerator.nextInt(equals.size() - 1);
-			if (r >= 4) {
-				System.out.println("situação indesejada em myGroup ");
+		}
+
+		ind.setMyTrends(betterForWorse.get(1));
+
+	}
+
+	/**
+	 * this method was created to allocate the all individuals in population accord
+	 * with his trend in a list that separate the individuals accord his trend
+	 */
+
+	public void separateIndividualsAccordingToTheTrend() {
+		for (List<AnIndividualAndHisVector<S>> l : this.familyOfIndividualInPopulation) {
+			for (AnIndividualAndHisVector<S> a : l) {
+				int myTrends = a.getMyTrends();
+				switch (myTrends) {
+				case 0:
+					this.thoseIndividualsAndThisTrend.get(0).add(a);
+					break;
+				case 1:
+					this.thoseIndividualsAndThisTrend.get(1).add(a);
+					break;
+				case 2:
+					this.thoseIndividualsAndThisTrend.get(2).add(a);
+					break;
+				case 3:
+					this.thoseIndividualsAndThisTrend.get(3).add(a);
+					break;
+
+				default:
+					break;
+				}
 			}
-			// **********
-			return r;
+
 		}
 
 	}
 
-	public void setTheIndividualTrend(List<Double> atributes, AnIndividualAndHisVector ind) {
-		Double lower = Double.MAX_VALUE;
-		List<Integer> equals = new ArrayList<>();
-		int iLower = 0;
-		int icurrent = 0;
-		Random gerator = new Random();
-		for (Double d : atributes) {
-			if (icurrent != ind.getMyGroups()) {
-				if (d < lower) {
-					lower = d;
-					iLower = icurrent;
-				} else if (d == lower) {
-					if ((equals).size() == 0) {
-						equals.add(iLower);
-						equals.add(icurrent);
-					} else {
-						equals.add(icurrent);
-					}
+	/**
+	 * this method returns a list of lists thats have in the inner list in position
+	 * 0 the group. and in position 1 the quantity needed of individuals to balance
+	 * the population
+	 */
+	public List<List<Integer>> InformQuantityToBalancePopulationControl() {
+		int media = 0;
+		int populationSize = 0;
+		for (int i = 0; i < this.familyOfIndividualInPopulation.size(); i++) {
+			populationSize += this.familyOfIndividualInPopulation.get(i).size();
+		}
+		media = populationSize / this.numberOfObjectives;
+//		list of list, the inner list have in position 0 the group.
+//		And in position 1 the quantity needed
+		List<List<Integer>> needs = new ArrayList<>();
+		for (int i = 0; i < this.eQualizationList.size(); i++) {
+			if ((this.eQualizationList.get(i) * populationSize) < media) {
+				List<Integer> l = new ArrayList<>();
+				l.add(i);
+				double d = this.eQualizationList.get(i);
+				int neededtNumber = (int) (media - ((int) populationSize * d));
+				l.add(neededtNumber);
+				needs.add(l);
+			}
+
+		}
+		return needs;
+
+	}
+
+	/**
+	 * this method returns a matingPopulationList filled with part of population
+	 * that need get bigger you members
+	 * 
+	 * @param matingPopulation
+	 * @param didBetterToTheSearch
+	 */
+
+	public void PopulationControlMating(List<S> matingPopulation, List<Integer> didBetterToTheSearch) {
+		List<S> arrived = new ArrayList<>();
+		int limit = 0;
+		int time = 0;
+		arrived.addAll(matingPopulation);
+		List<List<Integer>> needs = InformQuantityToBalancePopulationControl();
+		for (List<Integer> l : needs) {
+			limit += (int) l.get(1);
+			List<S> listGoupSolution = new ArrayList<>();
+			List<S> copyListGoupSolution = new ArrayList<>();
+			List<S> listTrendSolution = new ArrayList<>();
+			List<S> copyListTrendSolution = new ArrayList<>();
+
+			for (AnIndividualAndHisVector<S> a : this.familyOfIndividualInPopulation.get(l.get(0))) {
+				if (!didBetterToTheSearch.contains(a.getMyIndexInPopulation())) {
+					listGoupSolution.add((S) a.getSolution());
+				}
+
+			}
+
+			copyListGoupSolution.addAll(listGoupSolution);
+			int stop = copyListGoupSolution.size();
+			for (int i = 0; i < stop; i++) {
+				Collections.shuffle(copyListGoupSolution);
+				matingPopulation.add(copyListGoupSolution.get(0));
+				copyListGoupSolution.remove(0);
+				if (matingPopulation.size()==l.get(1)) break;
+			}
+
+			for (AnIndividualAndHisVector<S> a : this.thoseIndividualsAndThisTrend.get(l.get(0))) {
+				if (matingPopulation.size()==l.get(1)) break;
+				if (!didBetterToTheSearch.contains(a.getMyIndexInPopulation())) {
+					listTrendSolution.add((S) a.getSolution());
 				}
 			}
-			icurrent++;
-		}
-		if (equals.size() == 0) {
-			ind.setMyTrends(iLower);
-		} else {
-			ind.setMyTrends(gerator.nextInt(equals.size() - 1));
+
+			while (matingPopulation.size() < limit || time < limit) {
+				if (matingPopulation.size()==l.get(1)) break;
+
+				if (listTrendSolution.size() > 0) {
+					Collections.shuffle(listTrendSolution);
+					matingPopulation.add(listTrendSolution.get(0));
+				}
+
+				if (listGoupSolution.size() > 0) {
+					Collections.shuffle(listGoupSolution);
+					matingPopulation.add(listGoupSolution.get(0));
+				}
+
+				time += 1;
+			}
 		}
 
 	}
@@ -280,16 +487,23 @@ public class HyperplaneObsevation<S extends Solution<?>> {
 		this.numberOfObjectives = numberOfObjectives;
 	}
 
+	/**
+	 * this method use variance to calculate if the population is unbalanced in
+	 * terms of distribution, if variance > 10% the population are unbalanced
+	 * (review this percentage)
+	 */
+
 	public void eQualization() {
 		int totality = 0;
-		Variance v = new Variance();
+		Variance v = new Variance(false);
 		List<Double> equali = new ArrayList<>();
 
 		for (List l : this.familyOfIndividualInPopulation) {
 			equali.add((double) l.size());
 			totality += l.size();
 		}
-
+		
+		
 		double[] equaliArray = new double[equali.size()];
 		for (int i = 0; i < equali.size(); i++) {
 			double d = equali.get(i) / totality;

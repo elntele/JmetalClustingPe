@@ -56,8 +56,13 @@ public class EnvironmentalSelection<S extends Solution<?>> implements SelectionO
 				{
 					if (f==0) // in the first objective we create the vector of conv_objs
 						setAttribute(s, new ArrayList<Double>());
-					
+					// teste add por jorge
+					if (this.getAttribute(s).size()>4) {
+						System.out.println();
+						}
+					//**********************
 					getAttribute(s).add(s.getObjective(f)-minf);
+					System.out.println();// outro teste pra ver o atribute deppois de add
 					
 				}
 			}
@@ -314,7 +319,8 @@ public class EnvironmentalSelection<S extends Solution<?>> implements SelectionO
 		
  	    normalizeObjectives(source, intercepts, ideal_point);
 		// ---------- Step 15 / Algorithm 3, Step 16 ----------
-		associate(source);
+		associate(source);// método original do NSGA3 mas essa observação foi feita por jorge: 
+						  //calcula a distancia entre a solution e o reference point pode ser usado em clusterização 
 
 		// ---------- Step 17 / Algorithm 4 ----------
 		while (source.size() < this.solutionsToSelect)
