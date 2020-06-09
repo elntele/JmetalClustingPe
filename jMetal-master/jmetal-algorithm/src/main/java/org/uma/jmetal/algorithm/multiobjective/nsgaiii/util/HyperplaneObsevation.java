@@ -236,9 +236,6 @@ public class HyperplaneObsevation<S extends Solution<?>> {
 	 */
 
 	public void setTheIndividualTrend(List<Double> attributes, AnIndividualAndHisVector ind) {
-		if(attributes.size()>10) {
-			System.out.println();
-		}
 		List<Double> ordenadAttributes = new ArrayList<>();
 		ordenadAttributes.addAll(attributes);
 		Collections.sort(ordenadAttributes);
@@ -351,18 +348,21 @@ public class HyperplaneObsevation<S extends Solution<?>> {
 				Collections.shuffle(copyListGoupSolution);
 				matingPopulation.add(copyListGoupSolution.get(0));
 				copyListGoupSolution.remove(0);
-				if (matingPopulation.size()==l.get(1)) break;
+				if (matingPopulation.size() == l.get(1))
+					break;
 			}
 
 			for (AnIndividualAndHisVector<S> a : this.thoseIndividualsAndThisTrend.get(l.get(0))) {
-				if (matingPopulation.size()==l.get(1)) break;
+				if (matingPopulation.size() == l.get(1))
+					break;
 				if (!didBetterToTheSearch.contains(a.getMyIndexInPopulation())) {
 					listTrendSolution.add((S) a.getSolution());
 				}
 			}
 
 			while (matingPopulation.size() < limit || time < limit) {
-				if (matingPopulation.size()==l.get(1)) break;
+				if (matingPopulation.size() == l.get(1))
+					break;
 
 				if (listTrendSolution.size() > 0) {
 					Collections.shuffle(listTrendSolution);
@@ -502,8 +502,7 @@ public class HyperplaneObsevation<S extends Solution<?>> {
 			equali.add((double) l.size());
 			totality += l.size();
 		}
-		
-		
+
 		double[] equaliArray = new double[equali.size()];
 		for (int i = 0; i < equali.size(); i++) {
 			double d = equali.get(i) / totality;
@@ -666,6 +665,7 @@ public class HyperplaneObsevation<S extends Solution<?>> {
 	}
 
 	public List<Integer> calcTheCandidates(Properties prop) {
+
 		int SolutNumber = Integer.parseInt(prop.getProperty("nIndividuosToSearch"));
 
 		// se este metodo funcionar adeguar tudo inclisive deletando irich e ipoor

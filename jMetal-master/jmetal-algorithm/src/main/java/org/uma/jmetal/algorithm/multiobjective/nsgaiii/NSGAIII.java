@@ -1830,14 +1830,20 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	}
 
 	/**
-	 * metodo criado para gradar os paretos do problema na intenção de usar da busca
+	 * metodo criado garantir que não haja solucões duplicadas no pareto
 	 * local
 	 * 
 	 * @param index
 	 * @param pareto
 	 */
-	private void reservPretos(int index, List<S> pareto) {
-
+	private List<S> RemoveSolutionsAddingMultipleTimes( List<S> slicePareto) {
+		 List<S> returnPareto = new ArrayList<>();
+		 	for (S s:slicePareto) {
+		 		if (!returnPareto.contains(s)){ 
+		 			returnPareto.add(s);
+		 		}
+		 	}
+		 return returnPareto;
 	}
 
 	@Override
@@ -1855,8 +1861,8 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 		int rankingIndex = 0;
 		int candidateSolutions = 0;
 		while (candidateSolutions < getMaxPopulationSize()) {
-			fronts.add(ranking.getSubfront(rankingIndex));
-			reservPretos(rankingIndex, fronts.get(rankingIndex));// adiocionado por jorge candeias
+//			fronts.add(ranking.getSubfront(rankingIndex)); original
+			fronts.add(RemoveSolutionsAddingMultipleTimes(ranking.getSubfront(rankingIndex)));// autor jorge candeias, e a linah de cima modificada
 			candidateSolutions += ranking.getSubfront(rankingIndex).size();
 			if ((pop.size() + ranking.getSubfront(rankingIndex).size()) <= getMaxPopulationSize())
 				addRankedSolutionsToPopulation(ranking, rankingIndex, pop);// aqui que ele adiciona a sulução ranquiada
