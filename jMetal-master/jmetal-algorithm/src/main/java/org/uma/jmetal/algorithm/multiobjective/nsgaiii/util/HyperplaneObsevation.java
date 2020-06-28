@@ -284,6 +284,108 @@ public class HyperplaneObsevation<S extends Solution<?>> {
 
 	}
 
+//	/**
+//	 * this method returns a list of lists thats have in the inner list in position
+//	 * 0 the group. and in position 1 the quantity needed of individuals to balance
+//	 * the population
+//	 */
+//	public List<List<Integer>> InformQuantityToBalancePopulationControl() {
+//		int media = 0;
+//		int populationSize = 0;
+//		for (int i = 0; i < this.familyOfIndividualInPopulation.size(); i++) {
+//			populationSize += this.familyOfIndividualInPopulation.get(i).size();
+//		}
+//		media = populationSize / this.numberOfObjectives;
+////		list of list, the inner list have in position 0 the group.
+////		And in position 1 the quantity needed
+//		List<List<Integer>> needs = new ArrayList<>();
+//		for (int i = 0; i < this.eQualizationList.size(); i++) {
+//			if ((this.eQualizationList.get(i) * populationSize) < media) {
+//				List<Integer> l = new ArrayList<>();
+//				l.add(i);
+//				double d = this.eQualizationList.get(i);
+//				int neededtNumber = (int) (media - ((int) populationSize * d));
+//				l.add(neededtNumber);
+//				needs.add(l);
+//			}
+//
+//		}
+//		return needs;
+//
+//	}
+	/**
+	 * method return a list with the fibonacci percentages ordered accord the
+	 * nearest semelhante in list of population
+	 * 
+	 * @param populationSize
+	 * @return
+	 */
+
+	public List<Double> takeTheNierestFibonaccciPercents(int populationSize) {
+		List<Double> fibonacciPercents = new ArrayList<>();
+		
+//		se der certo isso tem que ser preenchido por um método que calcule a gaussina.
+		fibonacciPercents.add(0.09090909090909090909090909090909);
+		fibonacciPercents.add(0.18181818181818181818181818181819);
+		fibonacciPercents.add(0.27272727272727272727272727272727);
+		fibonacciPercents.add(0.45454545454545454545454545454545);
+		Double [] temporary = new Double[fibonacciPercents.size()];
+		List <Double> aux= new ArrayList<>();
+		aux.addAll(this.eQualizationList);
+		Collections.sort(aux);
+		for (int i=0;i<aux.size();i++) {
+			for (int l=0;l<this.eQualizationList.size();l++) {
+				if (aux.get(i)==this.eQualizationList.get(l)) {
+					temporary[l]=fibonacciPercents.get(i);
+				}
+			}
+			
+		}
+		List<Double> fibonacciPercentsReturn = new ArrayList<>();
+		for (int i=0;i<temporary.length;i++) {
+			fibonacciPercentsReturn.add(temporary[i]);
+		}
+		return fibonacciPercentsReturn;
+	}
+	
+//	fibonacci 
+//
+//	/**
+//	 * this method returns a list of lists thats have in the inner list in position
+//	 * 0 the group. and in position 1 the quantity needed of individuals to balance
+//	 * the population
+//	 */
+//	public List<List<Integer>> InformQuantityToBalancePopulationControl() {
+//		int media = 0;
+//		int populationSize = 0;
+//		for (int i = 0; i < this.familyOfIndividualInPopulation.size(); i++) {
+//			populationSize += this.familyOfIndividualInPopulation.get(i).size();
+//		}
+//		List<Double> fibonacciPercents = takeTheNierestFibonaccciPercents(populationSize);
+//
+//		media = populationSize / this.numberOfObjectives;
+////		list of list, the inner list have in position 0 the group.
+////		And in position 1 the quantity needed
+//		List<List<Integer>> needs = new ArrayList<>();
+//		for (int i = 0; i < this.eQualizationList.size(); i++) {
+//			double atualyQtd = this.eQualizationList.get(i) * populationSize;
+//			double neededQtd = fibonacciPercents.get(i) * populationSize;
+//			if (atualyQtd < neededQtd) {
+//				List<Integer> l = new ArrayList<>();
+//				l.add(i);
+//				double d = this.eQualizationList.get(i);
+//				int neededtNumber = (int) (neededQtd - ((int) atualyQtd));
+//				l.add(neededtNumber);
+//				needs.add(l);
+//			}
+//
+//		}
+//		return needs;
+//
+//	}
+	
+	
+	// media 
 	/**
 	 * this method returns a list of lists thats have in the inner list in position
 	 * 0 the group. and in position 1 the quantity needed of individuals to balance
@@ -313,6 +415,7 @@ public class HyperplaneObsevation<S extends Solution<?>> {
 		return needs;
 
 	}
+
 
 	/**
 	 * this method returns a matingPopulationList filled with part of population
@@ -513,10 +616,10 @@ public class HyperplaneObsevation<S extends Solution<?>> {
 		}
 
 		double variancia = v.evaluate(equaliArray);
-		if (variancia > 0.01) {
+		if (variancia >  0.01 /*0.018078512*/) {
 			this.equalized = false;
 		} else {
-			this.equalized = true;
+			this.equalized = false;// mcado aqui para nunca sincronizar
 		}
 		if (equali.size() == 0) {
 			System.out.println("situação indesejada em eQualization()");
