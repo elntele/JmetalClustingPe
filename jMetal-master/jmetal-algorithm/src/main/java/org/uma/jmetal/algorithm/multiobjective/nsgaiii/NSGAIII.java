@@ -20,6 +20,7 @@ import java.util.UUID;
 import java.util.Vector;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.math3.stat.descriptive.moment.Variance;
 import org.uma.jmetal.algorithm.impl.AbstractGeneticAlgorithm;
 import org.uma.jmetal.algorithm.multiobjective.nsgaiii.util.AnIndividualAndHisVector;
 import org.uma.jmetal.algorithm.multiobjective.nsgaiii.util.EnvironmentalSelection;
@@ -70,6 +71,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	protected List<Pattern>[] clustters;
 	private EnvironmentalSelection envi;
 	private int LocalSeachFoundNoDominated = 0;
+	private int localSeachEvaluateCount=0;
 	private UUID ParallelEvaluateId;
 	private PatternToGml ptg;
 	private List<S> betterPareto;// adiononado por jorge candeias para pegar o front menos dominado
@@ -83,6 +85,10 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	private List<List<S>> fronts = new ArrayList<>();// esse fio inserido para o tratamento de controle de reprodução
 	private List<Boolean> doNormatization = new ArrayList<>();
 	private List<Double> listW = new ArrayList<>();
+	private List<Integer> fitnessPrint=new ArrayList<>();
+	private List<List<Double>> tracksync=new ArrayList<>();
+	private int rebootCount=0;
+
 
 	/** Constructor */
 	public NSGAIII(NSGAIIIBuilder<S> builder) { // can be created from the
@@ -101,6 +107,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 		ptg = builder.getPtg();
 		prop = builder.getProp();
 		doNormatization();
+		initializaArrayMarksForFitnessPrint();
 
 		/// NSGAIII
 		numberOfDivisions = new Vector<>(1);
@@ -119,6 +126,24 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 
 		JMetalLogger.logger.info("rpssize: " + referencePoints.size());
 		;
+	}
+	
+	/**method was created to initialize a list of marks to print results accord of 
+	 * number of fitness function
+	 */
+	
+	public void initializaArrayMarksForFitnessPrint() {
+		if (this.prop.getProperty("resultForFitness").equals("y")) {
+			int interview = Integer.parseInt(this.prop.getProperty("fitnessInterval"));
+			int maxEvaluate=Integer.parseInt(this.prop.getProperty("maxEvaluate"));
+			
+			int timeToPrint = maxEvaluate/interview;
+			int initialPoint=interview;
+			for (int i=0;i<timeToPrint;i++  ) {
+				this.fitnessPrint.add(initialPoint);
+				initialPoint+=interview;
+			}
+		}
 	}
 
 	/**
@@ -154,14 +179,100 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 			iterations = 1;
 		}
 	}
+	
+	/** author jorge candeias
+	 * method created to  reboot of algorithm
+	 */
+	public void reboot() {
+		this.tracksync.removeAll(this.tracksync);
+		this.rebootCount+=1;
+		System.out.println("there is have a reboot: create a initial population");
+		this.prop.setProperty("startFromAstopedIteration","n");
+		this.population=this.createInitialPopulation();
+		System.out.println("evaluate the new population after reboot pivotement");
+		population = this.evaluatePopulation(population);
+		this.initProgress();
+		
+		if (this.rebootCount>Integer.parseInt(this.prop.getProperty("rebootnumber"))) {
+			this.prop.setProperty("trackSynchronization","n");
+			this.prop.setProperty("modo","sem busca");
+			this.prop.setProperty("populationMatingControl","n");
+		
+			
+		}
+		
+	}
+	
+	/** author jorge candeias
+	 * method created to analyze the Synchronization of population,
+	 * if the Synchronization not good, this method call a reboot
+	 * of algorithm
+	 */
+	
+	public void trackSynchronization() {
+		if (this.iterations>=Integer.parseInt(this.prop.getProperty("begintrack"))) {
+			if (this.iterations<=Integer.parseInt(this.prop.getProperty("endtrack"))) {
+				this.tracksync.add(this.hp.geteQualizationList());
+			}
+			
+			
+		}
+		if (this.iterations==Integer.parseInt(this.prop.getProperty("endtrack"))) {
+			Variance v = new Variance(false);
+			List <Double> controlSync=new ArrayList<>();
+			for (List <Double> l: this.tracksync) {
+				double[] a = new double[l.size()];
+				for (int i=0;i<a.length;i++) {
+					a[i]=l.get(i);
+				}
+				double variancia = v.evaluate(a);
+				controlSync.add(variancia);
+			}
+			boolean pivotement=false;
+			boolean arriveInlower=false;
+			int passedTheUpperLimit=0;
+			for (double d:controlSync) {
+				if (d<Double.parseDouble(this.prop.getProperty("lowerObjectve"))) {
+					arriveInlower=true;
+				}
+				if (d>Double.parseDouble(this.prop.getProperty("upperSyncLimit"))) {
+					passedTheUpperLimit+=1;
+				}
+			}
+			if (!arriveInlower||passedTheUpperLimit>Integer.parseInt(this.prop.getProperty("timeToExceed"))){
+				reboot();
+			}else if (this.rebootCount>0) {
+				this.iterations=Integer.parseInt(this.prop.getProperty("endtrack")) + Integer.parseInt(this.prop.getProperty("endtrack"))*this.rebootCount;
+				
+//				correctSaving();
+			}	
+		}
+		
+		
+	}
 
 	@Override
 	protected void updateProgress() {
 		iterations++;
 		System.out.println("numero de iterações " + iterations);
-		if (this.iterations % 10 == 0 || iterations == 198 || iterations == 202) {
-			printFinalSolutionSet(this.population);
+		
+	
+		
+		if (this.prop.getProperty("resultForFitness").equals("y")) {
+			if ((this.iterations*this.population.size()+this.localSeachEvaluateCount)>=this.fitnessPrint.get(0)) {
+				printforFitness(this.population);
+			}
+			
+		}else {
+			if (this.iterations % 10 == 0 || iterations == 198 || iterations == 202) {
+				printFinalSolutionSet(this.population);
+			}
 		}
+		
+		if (this.prop.getProperty("trackSynchronization").equals("y")&&this.fronts.size()==1) {
+			trackSynchronization();
+		}
+		
 	}
 
 	@Override
@@ -398,6 +509,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 			System.out.println("s2 domina s1");
 			this.LocalSeachFoundNoDominated += 1;
 		}
+	this.localSeachEvaluateCount+=1;
 		return i;
 	}
 
@@ -1836,7 +1948,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	}
 	
 	
-	/*
+	
 	 
 	 @Override
 	protected List<S> replacement(List<S> population, List<S> offspringPopulation) {
@@ -1878,82 +1990,82 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 		// adicioinado patra teste jorge candeias
 		return pop;
 	}
-	  */
+	  
 	 
 
-	@Override
-	protected List<S> replacement(List<S> population, List<S> offspringPopulation) {
-
-		List<S> jointPopulation = new ArrayList<>();
-		jointPopulation.addAll(population);
-		jointPopulation.addAll(offspringPopulation);
-
-		Ranking<S> ranking = computeRanking(jointPopulation);
-
-		// List<Solution> pop = crowdingDistanceSelection(ranking);
-		List<S> pop = new ArrayList<>();
-		List<List<S>> fronts = new ArrayList<>();
-		int rankingIndex = 0;
-		int candidateSolutions = 0;
-		while (candidateSolutions < getMaxPopulationSize()) {
-//			fronts.add(ranking.getSubfront(rankingIndex)); original
-			fronts.add(RemoveSolutionsAddingMultipleTimes(ranking.getSubfront(rankingIndex)));// autor jorge candeias, e
-																								// a linah de cima
-																								// modificada
-			candidateSolutions += ranking.getSubfront(rankingIndex).size();
-			if ((pop.size() + ranking.getSubfront(rankingIndex).size()) <= getMaxPopulationSize())
-				addRankedSolutionsToPopulation(ranking, rankingIndex, pop);// aqui que ele adiciona a sulução ranquiada
-																			// pra população, mas só no inicio
-			rankingIndex++;
-		}
-
-		// A copy of the reference list should be used as parameter of the
-		// environmental selection
-
-		EnvironmentalSelection<S> selection = new EnvironmentalSelection<>(fronts, getMaxPopulationSize(),
-				getReferencePointsCopy(), getProblem().getNumberOfObjectives());
-
-		this.fronts = fronts;// autor jorge candeias pata tratamento de controle de reprodução
-
-		if (this.iterations > 2) {// autor jorge candeias
-			List<S> safePop = new ArrayList<>();
-//			for (S o:pop ){
-//					DefaultIntegerSolution i=((DefaultIntegerSolution) o).getClone();
-//				   safePop.add((S) i);
+//	@Override
+//	protected List<S> replacement(List<S> population, List<S> offspringPopulation) {
+//
+//		List<S> jointPopulation = new ArrayList<>();
+//		jointPopulation.addAll(population);
+//		jointPopulation.addAll(offspringPopulation);
+//
+//		Ranking<S> ranking = computeRanking(jointPopulation);
+//
+//		// List<Solution> pop = crowdingDistanceSelection(ranking);
+//		List<S> pop = new ArrayList<>();
+//		List<List<S>> fronts = new ArrayList<>();
+//		int rankingIndex = 0;
+//		int candidateSolutions = 0;
+//		while (candidateSolutions < getMaxPopulationSize()) {
+////			fronts.add(ranking.getSubfront(rankingIndex)); original
+//			fronts.add(RemoveSolutionsAddingMultipleTimes(ranking.getSubfront(rankingIndex)));// autor jorge candeias, e
+//																								// a linah de cima
+//																								// modificada
+//			candidateSolutions += ranking.getSubfront(rankingIndex).size();
+//			if ((pop.size() + ranking.getSubfront(rankingIndex).size()) <= getMaxPopulationSize())
+//				addRankedSolutionsToPopulation(ranking, rankingIndex, pop);// aqui que ele adiciona a sulução ranquiada
+//																			// pra população, mas só no inicio
+//			rankingIndex++;
+//		}
+//
+//		// A copy of the reference list should be used as parameter of the
+//		// environmental selection
+//
+//		EnvironmentalSelection<S> selection = new EnvironmentalSelection<>(fronts, getMaxPopulationSize(),
+//				getReferencePointsCopy(), getProblem().getNumberOfObjectives());
+//
+//		this.fronts = fronts;// autor jorge candeias pata tratamento de controle de reprodução
+//
+//		if (this.iterations > 2) {// autor jorge candeias
+//			List<S> safePop = new ArrayList<>();
+////			for (S o:pop ){
+////					DefaultIntegerSolution i=((DefaultIntegerSolution) o).getClone();
+////				   safePop.add((S) i);
+////				}
+//			safePop.addAll(pop);
+//			if (fronts.size() == 1) {
+//				List<List<S>> threPopulation = new ArrayList<>();
+//				for (int i = 0; i < 3; i++) {
+//					EnvironmentalSelection<S> selection1 = new EnvironmentalSelection<>(fronts, getMaxPopulationSize(),
+//							getReferencePointsCopy(), getProblem().getNumberOfObjectives());
+//					List<S> popTime = new ArrayList<>();
+//					popTime.addAll(safePop);
+//					pop = selection1.execute(popTime);// original
+//					threPopulation.add(pop);
+//					// autor jorge candeias atenção, a linha abaixo esta quebrando o
+//					// largestreferePoint, mas por enquanto não esta sendo usado
+//					this.hp = selection1.getHpo();
+//
 //				}
-			safePop.addAll(pop);
-			if (fronts.size() == 1) {
-				List<List<S>> threPopulation = new ArrayList<>();
-				for (int i = 0; i < 3; i++) {
-					EnvironmentalSelection<S> selection1 = new EnvironmentalSelection<>(fronts, getMaxPopulationSize(),
-							getReferencePointsCopy(), getProblem().getNumberOfObjectives());
-					List<S> popTime = new ArrayList<>();
-					popTime.addAll(safePop);
-					pop = selection1.execute(popTime);// original
-					threPopulation.add(pop);
-					// autor jorge candeias atenção, a linha abaixo esta quebrando o
-					// largestreferePoint, mas por enquanto não esta sendo usado
-					this.hp = selection1.getHpo();
-
-				}
-				pop = betterThree(threPopulation);
-
-			} else {
-				pop = selection.execute(pop);// original
-				this.hp = selection.getHpo();// autor jorge candeias
-			}
-			tradeTheObservationPlane(pop);// autor jorge candeias
-			this.EqualizadListe.add(this.hp.geteQualizationList());// autor jorge candeias
-		} else {
-			pop = selection.execute(pop);// original
-			this.hp = selection.getHpo();// autor jorge candeias
-		}
-//		this.envi = selection;// autor jorge candeias
-
-		// this.hp.externalAssociateTheLargestToThefamilyOfIndividualInPopulation(prop,this.problem.getNumberOfVariables());//
-		// adicioinado patra teste jorge candeias
-		return pop;
-	}
+//				pop = betterThree(threPopulation);
+//
+//			} else {
+//				pop = selection.execute(pop);// original
+//				this.hp = selection.getHpo();// autor jorge candeias
+//			}
+//			tradeTheObservationPlane(pop);// autor jorge candeias
+//			this.EqualizadListe.add(this.hp.geteQualizationList());// autor jorge candeias
+//		} else {
+//			pop = selection.execute(pop);// original
+//			this.hp = selection.getHpo();// autor jorge candeias
+//		}
+////		this.envi = selection;// autor jorge candeias
+//
+//		// this.hp.externalAssociateTheLargestToThefamilyOfIndividualInPopulation(prop,this.problem.getNumberOfVariables());//
+//		// adicioinado patra teste jorge candeias
+//		return pop;
+//	}
 
 	/**
 	 * adicionado por jorge candeias para trabalhar a alimentacao da obsevarcao do
@@ -2034,6 +2146,46 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	public List<List<Integer>> getIndexOfIndividualSelectionedToTheSearch() {
 		return indexOfIndividualSelectionedToTheSearch;
 	}
+	public void printforFitness(List<? extends Solution<?>> population) {
+		String path = this.prop.getProperty("local") + this.prop.getProperty("algName") + "/"
+				+ this.prop.getProperty("modo") + "/" + this.prop.getProperty("execucao");
+		new SolutionListOutput(population).setSeparator("\t")
+				.setVarFileOutputContext(new DefaultFileOutputContext(path + "/" + "VAR" + this.fitnessPrint.get(0) + ".tsv"))
+				.setFunFileOutputContext(new DefaultFileOutputContext(path + "/" + "FUN" + this.fitnessPrint.get(0)+ ".tsv"))
+				.print();
+		// parte nova
+		int w = 1;
+
+		new File(prop.getProperty("local") + prop.getProperty("algName") + "/" + prop.getProperty("modo") + "/"
+				+ prop.getProperty("execucao") + "/ResultadoGML" + this.fitnessPrint.get(0) + "/").mkdir();
+
+		String pathTogml = prop.getProperty("local") + prop.getProperty("algName") + "/" + prop.getProperty("modo")
+				+ "/" + prop.getProperty("execucao");
+		for (Solution<?> i : population) {
+			// IntegerSolution
+			String s = pathTogml + "/ResultadoGML" + this.fitnessPrint.get(0) + "/" + Integer.toString(w) + ".gml";
+			this.ptg.saveGmlFromSolution(s, (IntegerSolution) i);
+			List<Integer> centros = new ArrayList<>();
+			for (int j = 0; j < i.getLineColumn().length; j++) {
+				centros.add(i.getLineColumn()[j].getId());
+			}
+			w += 1;
+
+		}
+		
+		try {
+			this.fitnessPrint.remove(0);
+		} catch (Exception e) {
+			System.out.println("array de marcos de print vazio");
+		}
+		// ***********************
+
+		JMetalLogger.logger.info("Random Seed: " + JMetalRandom.getInstance().getSeed());
+		JMetalLogger.logger.info("Objectives values have been written to file FUN.tsv");
+		JMetalLogger.logger.info("Variables values have been written to file VAR.tsv");
+	}
+	
+	
 
 	public void printFinalSolutionSet(List<? extends Solution<?>> population) {
 		String path = this.prop.getProperty("local") + this.prop.getProperty("algName") + "/"

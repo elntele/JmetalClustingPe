@@ -619,7 +619,7 @@ public class HyperplaneObsevation<S extends Solution<?>> {
 		if (variancia >  0.01 /*0.018078512*/) {
 			this.equalized = false;
 		} else {
-			this.equalized = false;// mcado aqui para nunca sincronizar
+			this.equalized = true;// mcado aqui para nunca sincronizar
 		}
 		if (equali.size() == 0) {
 			System.out.println("situação indesejada em eQualization()");
