@@ -596,7 +596,7 @@ public class HyperplaneObsevation<S extends Solution<?>> {
 	 * (review this percentage)
 	 */
 
-	public void eQualization() {
+	public void eQualization(Properties prop) {
 		int totality = 0;
 		Variance v = new Variance(false);
 		List<Double> equali = new ArrayList<>();
@@ -616,7 +616,7 @@ public class HyperplaneObsevation<S extends Solution<?>> {
 		}
 
 		double variancia = v.evaluate(equaliArray);
-		if (variancia >  0.01 /*0.018078512*/) {
+		if (variancia >  Double.parseDouble(prop.getProperty("syncObjective"))) {// 0.01 /*0.018078512*/
 			this.equalized = false;
 		} else {
 			this.equalized = true;// mcado aqui para nunca sincronizar
