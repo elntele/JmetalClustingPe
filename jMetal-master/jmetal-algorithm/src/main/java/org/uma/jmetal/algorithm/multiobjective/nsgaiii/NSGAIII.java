@@ -20,6 +20,7 @@ import java.util.UUID;
 import java.util.Vector;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.math3.exception.OutOfRangeException;
 import org.apache.commons.math3.stat.descriptive.moment.Variance;
 import org.uma.jmetal.algorithm.impl.AbstractGeneticAlgorithm;
 import org.uma.jmetal.algorithm.multiobjective.nsgaiii.util.AnIndividualAndHisVector;
@@ -257,11 +258,15 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 
 		if (this.prop.getProperty("resultForFitness").equals("y")) {
 			int fitnessCount= this.iterations * this.population.size() + this.localSeachEvaluateCount;
-			if (fitnessCount >= this.fitnessPrint.get(0)) {
-				printforFitness(this.population);
-				if (fitnessCount>=this.maxEvaluate) {
-					this.iterations=maxIterations;
+			if (fitnessCount>=this.maxEvaluate) {
+				this.iterations=maxIterations;
+			}
+			try {
+				if (fitnessCount >= this.fitnessPrint.get(0)) {
+					printforFitness(this.population);
 				}
+			} catch (IndexOutOfBoundsException e) {
+				System.out.println("o range acabou em breve a ultima impressão chegará");
 			}
 
 		} else {
@@ -1242,7 +1247,6 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 				// chamada para a busca local
 				if (individualsToLocSearc.contains(i)) {
 					System.out.println("Solução top indice " + i);
-
 					Solution copyInterge = population.get(i).copy();
 					Random clusteRandomPicker = new Random();
 					int clusterNumber = clusteRandomPicker.nextInt(population.get(i).copy().getLineColumn().length);
@@ -1266,7 +1270,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 						Pattern[] tempPattern = population.get(i).getLineColumn().clone();
 						tempPattern[clusterNumber] = p;
 						copyInterge.setLineColumn(tempPattern);
-						IntegerSolution s2 = (IntegerSolution) copyInterge;
+						IntegerSolution s2 = (IntegerSolution) copyInterge.copy();// bug corrigido: ta clonando
 
 						if (this.prop.getProperty("theSearch").equals("new")) {
 							s2 = putRemoveEdge((DefaultIntegerSolution) s2);
@@ -1337,7 +1341,8 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 						Pattern[] tempPattern = population.get(i).getLineColumn().clone();
 						tempPattern[clusterNumber] = p;
 						copyInterge.setLineColumn(tempPattern);
-						IntegerSolution s2 = (IntegerSolution) copyInterge;
+						// bug corrigido depois dia 14/10 (meu deus do ceu)
+						IntegerSolution s2 = (IntegerSolution) copyInterge.copy();
 
 						if (this.prop.getProperty("theSearch").equals("new")) {
 							s2 = putRemoveEdge((DefaultIntegerSolution) s2);
@@ -1396,7 +1401,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 					Pattern[] tempPattern = s1.getLineColumn().clone();
 					tempPattern[clusterNumber] = p;
 					copyInterge.setLineColumn(tempPattern);
-					IntegerSolution s2 = (IntegerSolution) copyInterge;
+					IntegerSolution s2 = (IntegerSolution) copyInterge.copy();
 					
 					if (this.prop.getProperty("theSearch").equals("new")) {
 						s2 = putRemoveEdge((DefaultIntegerSolution) s2);
@@ -1455,7 +1460,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 				if (individualsToLocSearc.contains(i)) {
 					System.out.println("Solução top indice " + i);
 
-					Solution copyInterge = population.get(i).copy();
+//					Solution copyInterge = population.get(i).copy();
 					Random gerator = new Random();
 					int clusterNumber = gerator.nextInt(population.get(i).copy().getLineColumn().length);
 					// *****************************************************************
@@ -1474,10 +1479,12 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 					S sDominator = (S) population.get(i).copy();
 
 					for (Pattern p : Litlepattern) {
+						Solution copyInterge = population.get(i).copy();
 						Pattern[] tempPattern = population.get(i).getLineColumn().clone();
 						tempPattern[clusterNumber] = p;
 						copyInterge.setLineColumn(tempPattern);
-						IntegerSolution s2 = (IntegerSolution) copyInterge;
+						//clonado
+						IntegerSolution s2 = (IntegerSolution) copyInterge.copy();
 
 						if (this.prop.getProperty("theSearch").equals("new")) {
 							s2 = putRemoveEdge((DefaultIntegerSolution) s2);
@@ -1491,12 +1498,13 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 						case 0:
 							break;
 						case 1:
-							sDominator = (S) s2.copy();// a nova solução assumi o lugar de dominador
-							population.remove(i);
-							population.add(i, (S) s2.copy());// a nova solução assumi o lugar de anterior para ser
-																// comparada com outros
-							// vizinhos na
-							// busca
+							//a nova solução assumi o lugar de dominador é um backup
+							//para ser colocado na lista de retorno: copySolution
+							sDominator = (S) s2.copy();
+							//a nova solução assumi o lugar da anterior, na população, para 
+							//ser comparada com soluções encontradas em outras rodadas de busca
+							population.set(i, (S) s2.copy());
+																
 							break;
 						default:
 							System.out.println("deu falha no compara");
@@ -1527,7 +1535,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 					System.out.println("Solução da escolha randomica indice " + i);
 
 					// *************************
-					Solution copyInterge = population.get(i).copy();
+//					Solution copyInterge = population.get(i).copy();
 					Random clusteRandomPicker = new Random();
 					int clusterNumber = clusteRandomPicker.nextInt(population.get(i).copy().getLineColumn().length);
 					// *****************************************************************
@@ -1546,10 +1554,11 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 					S sDominator = (S) population.get(i).copy();
 
 					for (Pattern p : Litlepattern) {
+						Solution copyInterge = population.get(i).copy();
 						Pattern[] tempPattern = population.get(i).getLineColumn().clone();
 						tempPattern[clusterNumber] = p;
 						copyInterge.setLineColumn(tempPattern);
-						IntegerSolution s2 = (IntegerSolution) copyInterge;
+						IntegerSolution s2 = (IntegerSolution) copyInterge.copy();
 						if (this.prop.getProperty("theSearch").equals("new")) {
 							s2 = putRemoveEdge((DefaultIntegerSolution) s2);
 						}
@@ -1561,12 +1570,12 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 						case 0:
 							break;
 						case 1:
-							sDominator = (S) s2.copy();// a nova solução assumi o lugar de dominador
-							population.remove(i);
-							population.add(i, (S) s2.copy());// a nova solução assumi o lugar de anterior para ser
-																// comparada com outros
-							// vizinhos na
-							// busca
+							//a nova solução assumi o lugar de dominador é um backup
+							//para ser colocado na lista de retorno: copySolution
+							sDominator = (S) s2.copy();
+							//a nova solução assumi o lugar da anterior, na população, para 
+							//ser comparada com soluções encontradas em outras rodadas de busca
+							population.set(i, (S) s2.copy());
 							break;
 						default:
 							System.out.println("deu falha no compara");
@@ -1585,7 +1594,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 		} else {
 
 			for (Solution s1 : population) {
-				Solution copyInterge = s1.copy();
+//				Solution copyInterge = s1.copy();
 				Random gerator = new Random();
 				int clusterNumber = gerator.nextInt(s1.copy().getLineColumn().length);
 				// *****************************************************************
@@ -1604,10 +1613,11 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 				S sDominator = (S) s1.copy();
 
 				for (Pattern p : Litlepattern) {
+					Solution copyInterge = s1.copy();
 					Pattern[] tempPattern = s1.getLineColumn().clone();
 					tempPattern[clusterNumber] = p;
 					copyInterge.setLineColumn(tempPattern);
-					IntegerSolution s2 = (IntegerSolution) copyInterge;
+					IntegerSolution s2 = (IntegerSolution) copyInterge.copy();
 					if (this.prop.getProperty("theSearch").equals("new")) {
 						s2 = putRemoveEdge((DefaultIntegerSolution) s2);
 					}
@@ -1621,10 +1631,12 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 					case 0:
 						break;
 					case 1:
-						sDominator = (S) s2.copy();// a nova solução assumi o lugar de dominador
-						s1 = (S) s2.copy();// a nova solução assumi o lugar de S1 para ser comparada com outros vizinhos
-											// na
-											// busca
+						//a nova solução assumi o lugar de dominador
+						sDominator = (S) s2.copy();
+						//a nova solução assumi o lugar de S1 para ser  
+						//comparada com outros vizinhos na busca
+						s1 = (S) s2.copy();
+											
 						break;
 					default:
 						System.out.println("deu falha no compara");
@@ -1717,6 +1729,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	 */
 	
 	public boolean containsInBigGroup(Solution s) {
+		this.hp.richToPoorCalc();
 		List richToPor = this.hp.getRichToPoor();
 		List<List> hiperPlanDistribuction = hp.getFamilyOfIndividualInPopulation();
 		if (this.hp.contaiSolution(s, hiperPlanDistribuction.get((int) richToPor.get(0)))) {
