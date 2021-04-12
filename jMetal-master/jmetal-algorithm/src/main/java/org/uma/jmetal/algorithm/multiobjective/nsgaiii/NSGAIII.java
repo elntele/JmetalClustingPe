@@ -1940,7 +1940,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 		int rankingIndex = 0;
 		int candidateSolutions = 0;
 		while (candidateSolutions < getMaxPopulationSize()) {
-//			fronts.add(ranking.getSubfront(rankingIndex)); original
+			//fronts.add(ranking.getSubfront(rankingIndex)); //original
 			fronts.add(RemoveSolutionsAddingMultipleTimes(ranking.getSubfront(rankingIndex)));// autor jorge candeias, e
 																								// a linah de cima
 																								// modificada

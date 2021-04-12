@@ -433,18 +433,22 @@ public class HyperplaneObsevation<S extends Solution<?>> {
 		List<List<Integer>> needs = InformQuantityToBalancePopulationControl();
 		for (List<Integer> l : needs) {
 			limit += (int) l.get(1);
+			//lista vai ser preenchida com os indivíduos raros
 			List<S> listGoupSolution = new ArrayList<>();
 			List<S> copyListGoupSolution = new ArrayList<>();
+			// lista vai ser preenchida com os indivíduos com tendencia a raros
 			List<S> listTrendSolution = new ArrayList<>();
 			List<S> copyListTrendSolution = new ArrayList<>();
-
+			//o que vem em didBetterToTheSearch já foi inserido na população na classe NSGAIII,
+			//então esse loop coloca na  lista listGoupSolution as suloções que não estão em 
+			//didBetterToTheSearch
 			for (AnIndividualAndHisVector<S> a : this.familyOfIndividualInPopulation.get(l.get(0))) {
 				if (!didBetterToTheSearch.contains(a.getMyIndexInPopulation())) {
 					listGoupSolution.add((S) a.getSolution());
 				}
 
 			}
-
+			// esse loop adinciona a lista de pais todos os individuos do grupo raro
 			copyListGoupSolution.addAll(listGoupSolution);
 			int stop = copyListGoupSolution.size();
 			for (int i = 0; i < stop; i++) {
@@ -454,15 +458,19 @@ public class HyperplaneObsevation<S extends Solution<?>> {
 				if (matingPopulation.size() == l.get(1))
 					break;
 			}
-
+			//esse loop monta uma lista com todos os individuos que tem tendencia ao interespaco de individuos raros
 			for (AnIndividualAndHisVector<S> a : this.thoseIndividualsAndThisTrend.get(l.get(0))) {
+				//se a lista dos pais já tiver o tamanho necessario indicado em l(indice 1) pare
 				if (matingPopulation.size() == l.get(1))
 					break;
 				if (!didBetterToTheSearch.contains(a.getMyIndexInPopulation())) {
 					listTrendSolution.add((S) a.getSolution());
 				}
 			}
-
+			// preenche a lista de pais inserindo repetidamente um indiviuduo gupo raro depois 
+			// um individuo com tendencia a grupo raro. Todavia, caso a lista de indivíduos 
+			// raros seja vazia a interpolação será entre indivíduos com tendência a raros.
+			// obs: ver a questão do limmit, parecer esta acumulando
 			while (matingPopulation.size() < limit || time < limit) {
 				if (matingPopulation.size() == l.get(1))
 					break;
