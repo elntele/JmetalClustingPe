@@ -1296,6 +1296,10 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 						}
 					}
 					copySolution.add((S) sDominator);
+					// se encontrou um dominador adicionar o indice a lista de dominadores
+					if (stop) {
+						this.iDidDominate.add(copySolution.size()-1);
+					}
 
 				} else {
 					copySolution.add((S) population.get(i));
@@ -1477,7 +1481,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 
 					// iteração na lista de vizinhos mais próximos
 					S sDominator = (S) population.get(i).copy();
-
+					boolean achouDominador = false;
 					for (Pattern p : Litlepattern) {
 						Solution copyInterge = population.get(i).copy();
 						Pattern[] tempPattern = population.get(i).getLineColumn().clone();
@@ -1504,7 +1508,7 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 							//a nova solução assumi o lugar da anterior, na população, para 
 							//ser comparada com soluções encontradas em outras rodadas de busca
 							population.set(i, (S) s2.copy());
-																
+							achouDominador=true;									
 							break;
 						default:
 							System.out.println("deu falha no compara");
@@ -1513,6 +1517,10 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 
 					}
 					copySolution.add((S) sDominator);
+					// se achou um dominador adicionar a lista de dominadores
+					if (achouDominador) {
+					this.iDidDominate.add(copySolution.size()-1); 
+					}
 				} else {
 					copySolution.add((S) population.get(i));
 
