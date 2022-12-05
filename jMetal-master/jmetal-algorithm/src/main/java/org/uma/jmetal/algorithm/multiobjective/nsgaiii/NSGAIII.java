@@ -263,7 +263,18 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 			}
 			try {
 				if (fitnessCount >= this.fitnessPrint.get(0)) {
-					printforFitness(this.population);
+					// condição adicionada para entregar a resposabilidade
+					// salvar o resuldado da polulação  ao metodo coparation 
+					// a partir do momento que começar a busca loocal e quado a busca local for
+					// localSearchTestingAllAndDontStopUntilArriveInFInalevenFindAFirstDominator
+					
+					int begiSeach= Integer.parseInt(this.prop.getProperty("BeginSeach"));
+					
+					if (!this.prop.getProperty("buscalocal").equals("localSearchTestingAllAndDontStopUntilArriveInFInalevenFindAFirstDominator")||
+							begiSeach>=this.iterations) {
+						printforFitness(this.population);
+					}
+					
 				}
 			} catch (IndexOutOfBoundsException e) {
 				System.out.println("o range acabou em breve a ultima impressão chegará");
@@ -505,17 +516,32 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 	public int coparation(IntegerSolution s1, IntegerSolution s2) {
 		DominanceComparator comparater = new DominanceComparator();
 		int i = comparater.compare(s1, s2);
-		// if (i == -1) {
-		// //System.out.println("s1 domina s2");
-		// }
-		// if (i == 0) {
-		// System.out.println("não há dominação");
-		// }
+	
 		if (i == 1) {
 			System.out.println("s2 domina s1");
 			this.LocalSeachFoundNoDominated += 1;
 		}
 		this.localSeachEvaluateCount += 1;
+		
+		if (this.prop.getProperty("resultForFitness").equals("y")) {
+			int fitnessCount= this.iterations * this.population.size() + this.localSeachEvaluateCount;
+			if (fitnessCount>=this.maxEvaluate) {
+				this.iterations=maxIterations;
+			}
+			try {
+				if (fitnessCount >= this.fitnessPrint.get(0)) {
+					
+					if (this.prop.getProperty("buscalocal").equals("localSearchTestingAllAndDontStopUntilArriveInFInalevenFindAFirstDominator")) {
+						printforFitness(this.population);
+					}
+					
+				}
+			} catch (IndexOutOfBoundsException e) {
+				System.out.println("o range acabou em breve a ultima impressão chegará");
+			}
+		
+		
+		}
 		return i;
 	}
 
@@ -1637,6 +1663,16 @@ public class NSGAIII<S extends Solution<?>> extends AbstractGeneticAlgorithm<S, 
 					case -1:
 						break;
 					case 0:
+						// nova condição da disciplina de CE do Cin para aceitar 
+						//a troca se são não dominadas
+						if (this.prop.getProperty("acceptanceCondition").equals("y")) {
+							System.out.println("s1 e s2 são não domonados: mudei");
+							//a nova solução assumi o lugar de dominador
+							sDominator = (S) s2.copy();
+							//a nova solução assumi o lugar de S1 para ser  
+							//comparada com outros vizinhos na busca
+							s1 = (S) s2.copy();
+						}
 						break;
 					case 1:
 						//a nova solução assumi o lugar de dominador
